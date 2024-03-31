@@ -9,6 +9,34 @@
                 font-size: 12px;
                 font-family: monospace;
             }
+            
+            #sourceUrlInput, #targetUrlInput {
+                width: 80%;
+                padding: 10px 10px;
+                margin: 8px 0;
+                box-sizing: border-box;
+                border: 3px solid #ccc;
+                -webkit-transition: 0.8s;
+                transition: 0.8s;
+                outline: none;
+                font-family: monospace;
+                font-size: 13px;
+                font-weight: bold;
+            }
+            
+            #sourceUrlInput:focus {
+                border: 3px solid #555;
+                font-family: monospace;
+                font-size: 13px;
+                font-weight: bold;
+            }
+            
+            #targetUrlInput:focus {
+                border: 3px solid #555;
+                font-family: monospace;
+                font-size: 13px;
+                font-weight: bold;
+            }
         </style>
         
         <script>
@@ -80,6 +108,28 @@
                 sendData(json);
             }
             
+            function wikipediaUrlIsValid(url) {
+                return /^(http(s)?:\/\/)?..\.wikipedia\.org\/wiki\/.+$/.test(url);
+            }
+            
+            function isPositiveInteger(str) {
+                if (/^\d+$/.test(str)) {
+                    return parseInt(str) > 0;
+                }
+                
+                return false;
+            }
+            
+            function onChangeThreads() {
+                const input = document.getElementById("threadsInput");
+                const currentValue = input.value;
+                
+                if (isPositiveInteger(currentValue)) {
+                    input.value = currentValue;
+                } else {
+                    alert("shit");
+                }
+            }
         </script>
     </head>
     <body>
@@ -90,12 +140,12 @@
                 <table>
                     <tr>
                         <td><label for="sourceUrlInput">Source URL:</label></td>
-                        <td><input type="text" id="sourceUrlInput" /> </td>
+                        <td><input type="text" id="sourceUrlInput" placeholder="Source article URL"/> </td>
                     </tr>
                     
                     <tr>
                         <td><label for="targetUrlInput">Target URL:</label></td>
-                        <td><input type="text" id="targetUrlInput" /> </td>
+                        <td><input type="text" id="targetUrlInput" placeholder="Target article URL"/> </td>
                     </tr>
 
                     <tr>
@@ -105,12 +155,12 @@
 
                     <tr>
                         <td><label for="expansionDurationInput">Maximum expansion duration</label></td>
-                        <td><input type="number" id="expansionDurationInput" value="4000" /> </td>
+                        <td><input type="number" id="expansionDurationInput" value="4000" placeholder="Milliseconds"/> </td>
                     </tr>
                     
                     <tr>
                         <td><label for="waitTimeoutInput">Maximum mutex timeout</label></td>
-                        <td><input type="number" id="waitTimeoutInput" value="2" /> </td>
+                        <td><input type="number" id="waitTimeoutInput" value="2" placeholder="Milliseconds"/> </td>
                     </tr>
 
                     <tr>
@@ -120,12 +170,12 @@
                     
                     <tr>
                         <td><label for="masterSleepInput">Master sleep duration:</label></td>
-                        <td><input type="number" id="masterSleepInput" value="15" /> </td>
+                        <td><input type="number" id="masterSleepInput" value="15" placeholder="Milliseconds"/> </td>
                     </tr>
 
                     <tr>
                         <td><label for="slaveSleepInput">Slave sleep duration:</label></td>
-                        <td><input type="number" id="slaveSleepInput" value="1" /> </td>
+                        <td><input type="number" id="slaveSleepInput" value="1" placeholder="Milliseconds"/> </td>
                     </tr>
                 </table>
                 
