@@ -1,0 +1,91 @@
+<!DOCTYPE html>
+<html>
+    <head>
+        <meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
+        
+        <style>
+            body {
+                font: 11pt monospace bold;
+            }
+        </style>
+        
+        <script>
+            function constructWebSocket() {
+                const host = document.location.host;
+                const path = document.location.pathname;
+                const webSocketUrl = `ws://${host}${path}search`;
+                
+                console.log(`Host: ${host}`);
+                console.log(`Path: ${path}`);
+                console.log(`WebSocket URL: ${webSocketUrl}`);
+                
+                const socket = new WebSocket(webSocketUrl);
+                
+                socket.onopen = (event) => {
+                    console.log(`onopen. Event: ${event}`);
+                };
+                
+                socket.onmessage = (event) => {
+                    const text = event.data;
+                    console.log(`Received text: ${text}.`);
+                };
+                
+                socket.onclose = (event) => {
+                    console.log(`onclose. Event: ${event}`);
+                };
+                
+                socket.onerror = (event) => {
+                    console.log(`onerror. Event: ${event}`);
+                };
+            };
+            
+            const webSocket = constructWebSocket();
+        </script>
+    </head>
+    <body>
+        <h1>WikiGameKiller 1.0.0</h1>
+        
+        <div id="input-form-div">
+            <form action="/search" method="GET">
+                <table>
+                    <tr>
+                        <td><label for="sourceUrlInput">Source URL:</label></td>
+                        <td><input type="text" id="sourceUrlInput" /> </td>
+                    </tr>
+                    
+                    <tr>
+                        <td><label for="targetUrlInput">Target URL:</label></td>
+                        <td><input type="text" id="targetUrlInput" /> </td>
+                    </tr>
+
+                    <tr>
+                        <td><label for="threadsInput">Number of threads</label></td>
+                        <td><input type="number" id="threadsInput" value="256" /> </td>
+                    </tr>
+                </table>
+
+                    <label for="expansionDurationInput">Maximum expansion duration</label>
+                    <input type="number" id="expansionDurationInput" value="4000" /> <br/>
+
+                    <label for="waitTimeoutInput">Maximum mutex timeout</label>
+                    <input type="number" id="waitTimeoutInput" value="2" /> <br/>
+
+                    <label for="trialsInput">Number of master trials</label>
+                    <input type="number" id="trialsInput" value="200" /> <br/>
+
+                    <label for="masterSleepInput">Master sleep duration</label>
+                    <input type="number" id="masterSleepInput" value="15" /> <br/>
+
+                    <label for="slaveSleepInput">Slave sleep duration   </label>
+                    <input type="number" id="slaveSleepInput" value="1" /> <br/>
+                <!--</table>-->
+                <button type="submit">Search</button>
+            </form>
+        </div>
+        
+        <div id="result-div">
+            
+        </div>
+        <footer>By Rodion "coderodde" Efremov. Copyleft 2024</footer>
+    </body>
+</html>
