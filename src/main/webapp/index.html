@@ -10,8 +10,8 @@
                 font-family: monospace;
             }
             
-            #sourceUrlInput, #targetUrlInput {
-                width: 80%;
+            .paramInput {
+                width: 300px;
                 padding: 10px 10px;
                 margin: 8px 0;
                 box-sizing: border-box;
@@ -24,19 +24,27 @@
                 font-weight: bold;
             }
             
-            #sourceUrlInput:focus {
+            .paramInput:focus {
                 border: 3px solid #555;
                 font-family: monospace;
                 font-size: 13px;
                 font-weight: bold;
             }
             
-            #targetUrlInput:focus {
-                border: 3px solid #555;
+            .paramInput::placeholder {
                 font-family: monospace;
                 font-size: 13px;
                 font-weight: bold;
             }
+            
+            .paramInput:error {
+                border: 3px solid #555;
+                font-family: monospace;
+                font-size: 13px;
+                font-weight: bold;
+                border-color: #C01B00;
+            }
+            
         </style>
         
         <script>
@@ -120,6 +128,10 @@
                 return false;
             }
             
+            function colorInputBorder(elem) {
+                document.getElementById("sourceUrlInput").style.borderColor = "red";
+            }
+            
             function onChangeThreads() {
                 const input = document.getElementById("threadsInput");
                 const currentValue = input.value;
@@ -140,42 +152,72 @@
                 <table>
                     <tr>
                         <td><label for="sourceUrlInput">Source URL:</label></td>
-                        <td><input type="text" id="sourceUrlInput" placeholder="Source article URL"/> </td>
+                        <td><input type="text"
+                                   id="sourceUrlInput"
+                                   class="paramInput"
+                                   onchange="colorInputBorder(null);"
+                                   placeholder="Source article URL"/> </td>
                     </tr>
                     
                     <tr>
                         <td><label for="targetUrlInput">Target URL:</label></td>
-                        <td><input type="text" id="targetUrlInput" placeholder="Target article URL"/> </td>
+                        <td><input type="text"
+                                   id="targetUrlInput"
+                                   class="paramInput"
+                                   placeholder="Target article URL"/> </td>
                     </tr>
 
                     <tr>
                         <td><label for="threadsInput">Number of threads</label></td>
-                        <td><input type="number" id="threadsInput" value="256" /> </td>
+                        <td><input type="number"
+                                   id="threadsInput" 
+                                   class="paramInput" 
+                                   value="256" 
+                                   onchange="onChangeThreads();" /> </td>
                     </tr>
 
                     <tr>
                         <td><label for="expansionDurationInput">Maximum expansion duration</label></td>
-                        <td><input type="number" id="expansionDurationInput" value="4000" placeholder="Milliseconds"/> </td>
+                        <td><input type="number" 
+                                   id="expansionDurationInput" 
+                                   class="paramInput"
+                                   value="4000"
+                                   placeholder="Milliseconds"/> </td>
                     </tr>
                     
                     <tr>
                         <td><label for="waitTimeoutInput">Maximum mutex timeout</label></td>
-                        <td><input type="number" id="waitTimeoutInput" value="2" placeholder="Milliseconds"/> </td>
+                        <td><input type="number"
+                                   id="waitTimeoutInput"
+                                   class="paramInput"
+                                   value="2"
+                                   placeholder="Milliseconds"/> </td>
                     </tr>
 
                     <tr>
                         <td><label for="trialsInput">Number of master trials</label></td>
-                        <td><input type="number" id="trialsInput" value="200" /> </td>
+                        <td><input type="number"
+                                   id="trialsInput"
+                                   class="paramInput"
+                                   value="200" /> </td>
                     </tr>
                     
                     <tr>
                         <td><label for="masterSleepInput">Master sleep duration:</label></td>
-                        <td><input type="number" id="masterSleepInput" value="15" placeholder="Milliseconds"/> </td>
+                        <td><input type="number"
+                                   id="masterSleepInput"
+                                   class="paramInput"
+                                   value="15"
+                                   placeholder="Milliseconds"/> </td>
                     </tr>
 
                     <tr>
                         <td><label for="slaveSleepInput">Slave sleep duration:</label></td>
-                        <td><input type="number" id="slaveSleepInput" value="1" placeholder="Milliseconds"/> </td>
+                        <td><input type="number"
+                                   id="slaveSleepInput" 
+                                   class="paramInput"
+                                   value="1"
+                                   placeholder="Milliseconds"/> </td>
                     </tr>
                 </table>
                 

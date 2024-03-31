@@ -2,6 +2,10 @@ package com.github.coderodde.wikipedia.game.killer;
 
 public final class SearchRequest {
     
+    static final String SEARCH_ACTION = "search";
+    static final String HALT_ACTION = "halt";
+    
+    private String action;
     private String sourceUrl;
     private String targetUrl;
     private int numberOfThreads;
@@ -11,6 +15,14 @@ public final class SearchRequest {
     private int masterSleepDuration;
     private int slaveSleepDuration;
 
+    public String getAction() {
+        return action;
+    }
+
+    public void setAction(String action) {
+        this.action = action;
+    }
+    
     public String getSourceUrl() {
         return sourceUrl;
     }
