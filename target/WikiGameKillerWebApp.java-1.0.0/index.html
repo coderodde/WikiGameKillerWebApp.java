@@ -67,8 +67,17 @@
                 const json = JSON.stringify(searchObject);
                 console.log("json: ", json);
                 
-                const webSocket = constructWebSocket();
-                webSocket.send(json);
+                let webSocket = constructWebSocket();
+                
+                function sendData() {
+                    if (webSocket.readyState) {    
+                        webSocket.send(json);
+                    } else {
+                        setTimeout(sendData, 100);
+                    }
+                }
+                
+                sendData(json);
             }
             
         </script>

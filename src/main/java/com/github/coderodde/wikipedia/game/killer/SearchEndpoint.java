@@ -6,6 +6,7 @@ import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.logging.Level;
 import java.util.logging.Logger;
+import javax.websocket.EncodeException;
 import javax.websocket.OnClose;
 import javax.websocket.OnError;
 import javax.websocket.OnMessage;
@@ -30,7 +31,9 @@ public final class SearchEndpoint {
     @OnOpen
     public void onOpen(/*final @PathParam("source") String source, 
                        final @PathParam("target") String target,*/
-                       final Session session) throws IOException {
+                       final Session session) throws IOException, 
+                                                     EncodeException {
+        
         session.setMaxIdleTimeout(CONNECTION_TIMEOUT_MILLIS);
         
         LOGGER.log(Level.INFO, 
@@ -41,7 +44,8 @@ public final class SearchEndpoint {
     @OnMessage
     public void onMessage(final Session session, 
                           final SearchRequest searchRequest)
-            throws IOException {
+            throws IOException, EncodeException {
+        
         System.out.println(searchRequest.getExpansionDuration());
         System.out.println(searchRequest.getMasterSleepDuration());
         System.out.println(searchRequest.getMasterTrials());
@@ -53,7 +57,8 @@ public final class SearchEndpoint {
     }
     
     @OnClose
-    public void onClose(final Session session) throws IOException {
+    public void onClose(final Session session) throws IOException,
+                                                      EncodeException {
         LOGGER.log(Level.WARNING, "Session closed.");
         STATE_MAP.remove(session);
     }
