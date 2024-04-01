@@ -6,6 +6,7 @@ import com.github.coderodde.graph.pathfinding.delayed.impl.ThreadPoolBidirection
 import com.github.coderodde.graph.pathfinding.delayed.impl.ThreadPoolBidirectionalBFSPathFinderSearchBuilder;
 import com.github.coderodde.wikipedia.graph.expansion.BackwardWikipediaGraphNodeExpander;
 import com.github.coderodde.wikipedia.graph.expansion.ForwardWikipediaGraphNodeExpander;
+import com.google.gson.Gson;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Collections;
@@ -14,6 +15,7 @@ import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.logging.Level;
 import java.util.logging.Logger;
+import java.util.regex.Pattern;
 import javax.websocket.EncodeException;
 import javax.websocket.OnClose;
 import javax.websocket.OnError;
@@ -27,11 +29,32 @@ import javax.websocket.server.ServerEndpoint;
                 encoders = SearchRequestEncoder.class)
 public final class SearchEndpoint {
     
+    /**
+     * The Wikipedia URL format.
+     */
+    private static final String WIKIPEDIA_URL_FORMAT =
+            "^((http:\\/\\/)|(https:\\/\\/))?..\\.wikipedia\\.org\\/wiki\\/.+$";
+    
+    /**
+     * The Wikipedia URL regular expression pattern object.
+     */
+    private static final Pattern WIKIPEDIA_URL_FORMAT_PATTERN = 
+            Pattern.compile(WIKIPEDIA_URL_FORMAT);
+            
+    private static final String INVALID_TERMINAL_URLS = 
+            """
+            {
+                "status":"invalidTerminals",
+                "sourceUrl":"%s",
+                "targetUrl":"%s"
+            }
+            """;
+    
     private static final String SOURCE_TARGET_SAME_JSON = 
             """
             {
                 "status":"sourceTargetEqual",
-                "source":"%s"
+                "url":"%s"
             }
             """;
     
@@ -153,10 +176,10 @@ public final class SearchEndpoint {
     }
     
     private static final class SearchThread extends Thread {
+        private final Session session;
         private ThreadPoolBidirectionalBFSPathFinder<String> finder;
         private AbstractNodeExpander<String> forwardNodeExpander;
         private AbstractNodeExpander<String> backwardNodeExpander;
-        private final SearchRequest searchRequest;
         private String sourceLanguageCode;
         private String targetLanguageCode;
         private String sourceTitle;
@@ -164,42 +187,109 @@ public final class SearchEndpoint {
         
         SearchThread(final Session session, 
                      final SearchRequest searchRequest) throws IOException {
-            
-            this.searchRequest = searchRequest;
+            this.session = session;
             
             final String sourceUrl = searchRequest.getSourceUrl().trim();
             final String targetUrl = searchRequest.getTargetUrl().trim();
             
-            if (sourceUrl.equals(targetUrl)) {
-                session.getBasicRemote()
-                       .sendText(
-                               String.format(
-                                       SOURCE_TARGET_SAME_JSON, 
-                                       sourceUrl));
-                return;
+            final MultipleException multipleException = new MultipleException();
+            
+            try {
+                checkSourceUrl(sourceUrl);
+            } catch (final IllegalArgumentException ex) {
+                multipleException.addException(ex);
             }
             
-            sourceTitle = extractArticleTitle(sourceUrl);
-            targetTitle = extractArticleTitle(targetUrl);
+            try {
+                checkTargetUrl(targetUrl);
+            } catch (final IllegalArgumentException ex) {
+                multipleException.addException(ex);
+            }
+            
+            final String sourceArticleTitle = extractArticleTitle(sourceUrl);
+            final String targetArticleTitle = extractArticleTitle(targetUrl);
+            
+            boolean sourceArticleValid = true;
+            boolean targetArticleValid = true;
+            
+            try {
+                if (!forwardNodeExpander.isValidNode(sourceArticleTitle)) {
+                    sourceArticleValid = false;
+                }
+            } catch (final Exception ex) {
+                sourceArticleValid = false;
+            }
+            
+            if (sourceArticleValid == false) {
+                multipleException.addException(
+                    new IllegalArgumentException(
+                        String.format(
+                            "The source article \"%s\" was rejected by " + 
+                                "Wikipedia API.", 
+                            sourceUrl)));
+            }
+            
+            try {
+                if (!backwardNodeExpander.isValidNode(targetArticleTitle)) {
+                    targetArticleValid = false;
+                }
+            } catch (final Exception ex) {
+                targetArticleValid = false;
+            }
+            
+            if (targetArticleValid == false) {
+                multipleException.addException(
+                    new IllegalArgumentException(
+                        String.format(
+                            "The target article \"%s\" was rejected by " + 
+                                "Wikipedia API.", 
+                            targetUrl)));
+            }
+            
+            if (sourceUrl.equals(targetUrl)) {
+                multipleException.addException(
+                    new IllegalArgumentException(
+                        String.format(
+                            "The source and target article URLs are same: "
+                            + "\"%s\".", 
+                            sourceUrl)));
+            }
             
             sourceLanguageCode = getLanguageCode(sourceTitle);
             targetLanguageCode = getLanguageCode(targetTitle);
             
             if (!sourceLanguageCode.equals(targetLanguageCode)) {
-                session.getBasicRemote()
-                       .sendText(
-                               String.format(
-                                       LANGUAGE_CODES_DIFFERENT,
-                                       sourceLanguageCode,
-                                       targetLanguageCode));
-                return;
+                multipleException.addException(
+                    new IllegalArgumentException(
+                        String.format(
+                            "Different language codes: \"%s\" vs \"%s\".", 
+                            sourceLanguageCode,
+                            targetLanguageCode)));
             }
             
             forwardNodeExpander  = new ForwardLinkExpander(sourceLanguageCode);
             backwardNodeExpander = new BackwardLinkExpander(targetLanguageCode);
             
             if (sourceTitle.equals(targetTitle)) {
-                session.getBasicRemote().sendText("{\"status\"}");
+                multipleException.addException(
+                    new IllegalArgumentException(
+                        "The source article URL and the target article URL " + 
+                                "are the same."));
+                
+            }
+            
+            
+            if (!multipleException.getExceptionList().isEmpty()) {
+                final ErrorJsonObject errorJsonObject = new ErrorJsonObject();
+                
+                errorJsonObject.status = "error";
+                errorJsonObject.errorMessages =
+                        convertToErrorMessages(
+                                multipleException.getExceptionList());
+                
+                final Gson gson = new Gson();
+                session.getBasicRemote().sendText(gson.toJson(errorJsonObject));
+                return;
             }
             
             this.finder = 
@@ -216,7 +306,13 @@ public final class SearchEndpoint {
         
         @Override
         public void run() {
-            final List<String> result = 
+            if (finder == null) {
+                // Once here, parameters are invalid and no search should 
+                // happen:
+                return;
+            }
+            
+            final List<String> path = 
                     ThreadPoolBidirectionalBFSPathFinderSearchBuilder
                     .<String>withPathFinder(finder)
                     .withSourceNode(sourceTitle)
@@ -225,7 +321,26 @@ public final class SearchEndpoint {
                     .withBackwardNodeExpander(backwardNodeExpander)
                     .search();
             
-                    
+            final SolutionJsonObject solutionJsonObject = 
+                    new SolutionJsonObject();
+            
+            solutionJsonObject.duration = finder.getDuration();
+            solutionJsonObject.numberOfExpandedNodes = 
+                    finder.getNumberOfExpandedNodes();
+            
+            solutionJsonObject.path = path;
+            solutionJsonObject.status = "solutionFound";
+            
+            final Gson gson = new Gson();
+            final String json = gson.toJson(solutionJsonObject);
+            
+            try {
+                session.getBasicRemote().sendText(json);
+            } catch (IOException ex) {
+                LOGGER.log(Level.SEVERE,
+                           "Could not send the result JSON to frontend: {0}.",
+                           ex.getMessage());
+            }
         }
     }
     
@@ -314,6 +429,18 @@ public final class SearchEndpoint {
         }
     }
     
+    private static final class SolutionJsonObject {
+        String status;
+        long duration;
+        int numberOfExpandedNodes;
+        List<String> path;
+    }
+    
+    private static final class ErrorJsonObject {
+        String status;
+        List<String> errorMessages;
+    }
+    
     private static String extractArticleTitle(final String url) {
         return url.substring(url.lastIndexOf('/') + 1);
     }
@@ -338,5 +465,61 @@ public final class SearchEndpoint {
         }
             
         return url.substring(0, 2);
+    }
+    
+    /**
+     * Checks that the source article URL conforms to a Wikipedia URL regular 
+     * language.
+     * 
+     * @param sourceUrl the source article URL.
+     */
+    private static void checkSourceUrl(final String sourceUrl) {
+        if (!WIKIPEDIA_URL_FORMAT_PATTERN.matcher(sourceUrl).find()) {
+            throw new IllegalArgumentException(
+                    String.format(
+                            "The source URL \"%s\" is invalid.", 
+                            sourceUrl));
+        }
+    }
+    
+    /**
+     * Checks that the source article URL conforms to a Wikipedia URL regular 
+     * language.
+     * 
+     * @param targetUrl the source article URL.
+     */
+    private static void checkTargetUrl(final String targetUrl) {
+        if (!WIKIPEDIA_URL_FORMAT_PATTERN.matcher(targetUrl).find()) {
+            throw new IllegalArgumentException(
+                    String.format(
+                            "The target URL \"%s\" is invalid.", 
+                            targetUrl));
+        }
+    }
+
+    private static final class MultipleException extends RuntimeException {
+        
+        private final List<Exception> exceptionList = new ArrayList<>();
+        
+        void addException(final Exception exception) {
+            exceptionList.add(exception);
+        }
+        
+        List<Exception> getExceptionList() {
+            return exceptionList;
+        }
+    }
+
+    private static List<String> convertToErrorMessages(
+            final List<Exception> exceptionList) {
+        
+        final List<String> errorMessageList = 
+                new ArrayList<>(exceptionList.size());
+    
+        for (final Exception exception : exceptionList) {
+            errorMessageList.add(exception.getMessage());
+        }
+        
+        return errorMessageList;
     }
 }
