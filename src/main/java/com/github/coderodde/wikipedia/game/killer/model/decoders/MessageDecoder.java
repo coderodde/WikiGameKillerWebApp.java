@@ -1,31 +1,27 @@
 package com.github.coderodde.wikipedia.game.killer.model.decoders;
 
-import com.github.coderodde.wikipedia.game.killer.model.HaltOperation;
+import com.github.coderodde.wikipedia.game.killer.model.Message;
 import com.google.gson.Gson;
 import javax.websocket.DecodeException;
 import javax.websocket.Decoder;
 import javax.websocket.EndpointConfig;
 
-public final class HaltOperationDecoder implements Decoder.Text<HaltOperation> {
+public final class MessageDecoder implements Decoder.Text<Message> {
 
     private static final Gson GSON = new Gson();
     
-    @Override
-    public HaltOperation decode(final String json) throws DecodeException {
-        return GSON.fromJson(json, HaltOperation.class);
+    public Message decode(final String string) throws DecodeException {
+        return GSON.fromJson(string, Message.class);
     }
 
-    @Override
     public boolean willDecode(final String string) {
         return true;
     }
 
-    @Override
-    public void init(final EndpointConfig ec) {
-        
+    public void init(EndpointConfig ec) {
+    
     }
 
-    @Override
     public void destroy() {
     
     }

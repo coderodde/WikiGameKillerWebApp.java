@@ -100,25 +100,30 @@
                 socket = constructWebSocket();
                 
                 const searchObject = {
-                    "action":              "search",
-                    "sourceUrl":           document.getElementById("sourceUrlInput")        .value,
-                    "targetUrl":           document.getElementById("targetUrlInput")        .value,
-                    "numberOfThreads":     document.getElementById("threadsInput")          .value,
-                    "expansionDuration":   document.getElementById("expansionDurationInput").value,
-                    "waitTimeout":         document.getElementById("waitTimeoutInput")      .value,
-                    "masterTrials":        document.getElementById("trialsInput")           .value,
-                    "masterSleepDuration": document.getElementById("masterSleepInput")      .value,
-                    "slaveSleepDuration":  document.getElementById("slaveSleepInput")       .value
+                    "action":"search",
+                    "status":"ignoreParam",
+                    "searchParameters": {
+                        "sourceUrl":           document.getElementById("sourceUrlInput")        .value,
+                        "targetUrl":           document.getElementById("targetUrlInput")        .value,
+                        "numberOfThreads":     Number(document.getElementById("threadsInput")          .value),
+                        "expansionDuration":   Number(document.getElementById("expansionDurationInput").value),
+                        "waitTimeout":         Number(document.getElementById("waitTimeoutInput")      .value),
+                        "masterTrials":        Number(document.getElementById("trialsInput")           .value),
+                        "masterSleepDuration": Number(document.getElementById("masterSleepInput")      .value),
+                        "slaveSleepDuration":  Number(document.getElementById("slaveSleepInput")       .value),
+                    },
+                    "errorMessages":[],
+                    "infoMessages":[]
                 };
                 
                 const json = JSON.stringify(searchObject);
                 console.log("json: ", json);
                 
                 let webSocket = constructWebSocket();
-                sendData(json);
+                sendData(webSocket, json);
             }
             
-            function sendData(json) {
+            function sendData(webSocket, json) {
                 let iterations = 0;
                 
                 function sendDataImpl() {
@@ -130,7 +135,7 @@
                     }
                 }
                 
-                console.log(`${iterations} before successfully sending data.`);
+                console.log(`${iterations} iterations before successfully sending data.`);
             }
             
             function wikipediaUrlIsValid(url) {

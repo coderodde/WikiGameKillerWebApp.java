@@ -1,14 +1,12 @@
 package com.github.coderodde.wikipedia.game.killer;
 
-import com.github.coderodde.wikipedia.game.killer.model.decoders.SearchRequestDecoder;
-import com.github.coderodde.wikipedia.game.killer.model.encoders.SearchRequestEncoder;
-import com.github.coderodde.wikipedia.game.killer.model.SearchRequest;
+import com.github.coderodde.wikipedia.game.killer.model.decoders.MessageDecoder;
+import com.github.coderodde.wikipedia.game.killer.model.encoders.MessageEncoder;
+import com.github.coderodde.wikipedia.game.killer.model.Message;
 import com.github.coderodde.graph.pathfinding.delayed.AbstractNodeExpander;
 import com.github.coderodde.graph.pathfinding.delayed.impl.ThreadPoolBidirectionalBFSPathFinder;
 import com.github.coderodde.graph.pathfinding.delayed.impl.ThreadPoolBidirectionalBFSPathFinderBuilder;
 import com.github.coderodde.graph.pathfinding.delayed.impl.ThreadPoolBidirectionalBFSPathFinderSearchBuilder;
-import com.github.coderodde.wikipedia.game.killer.model.decoders.HaltOperationDecoder;
-import com.github.coderodde.wikipedia.game.killer.model.encoders.HaltOperationEncoder;
 import com.github.coderodde.wikipedia.graph.expansion.BackwardWikipediaGraphNodeExpander;
 import com.github.coderodde.wikipedia.graph.expansion.ForwardWikipediaGraphNodeExpander;
 import com.google.gson.Gson;
@@ -21,6 +19,7 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import java.util.regex.Pattern;
+import javax.websocket.DecodeException;
 import javax.websocket.EncodeException;
 import javax.websocket.OnClose;
 import javax.websocket.OnError;
@@ -29,9 +28,7 @@ import javax.websocket.OnOpen;
 import javax.websocket.Session;
 import javax.websocket.server.ServerEndpoint;
 
-@ServerEndpoint(value = "/search",
-                decoders = { SearchRequestDecoder.class, HaltOperationDecoder.class },
-                encoders = { SearchRequestEncoder.class, HaltOperationEncoder.class })
+@ServerEndpoint(value = "/search", decoders = MessageDecoder.class, encoders = MessageEncoder.class )
 public final class SearchEndpoint {
     
     /**
@@ -87,10 +84,10 @@ public final class SearchEndpoint {
     private static final Logger LOGGER = 
             Logger.getLogger(SearchEndpoint.class.getSimpleName());
     
+    private static final Gson GSON = new Gson();
+    
     @OnOpen
-    public void onOpen(/*final @PathParam("source") String source, 
-                       final @PathParam("target") String target,*/
-                       final Session session) throws IOException, 
+    public void onOpen(final Session session) throws IOException, 
                                                      EncodeException {
         
         session.setMaxIdleTimeout(CONNECTION_TIMEOUT_MILLIS);
@@ -102,30 +99,62 @@ public final class SearchEndpoint {
     
     @OnMessage
     public void onMessage(final Session session, 
-                          final SearchRequest searchRequest)
-            throws IOException, EncodeException {
+                          final Message incomingMessage) 
+            throws IOException, DecodeException, EncodeException {
+        System.out.println("yeas");
+        final SearchThread searchThread = SESSION_TO_THRED_MAP.get(session);
+        final String action = incomingMessage.getAction();
         
-        switch (searchRequest.getAction()) {
-            case SearchRequest.SEARCH_ACTION:
-                search(session, searchRequest);
-                break;
+        switch (action) {
+            case Message.HALT_ACTION:
+                if (searchThread == null) {
+                    final Message message = new Message();
+                    message.setStatus("error");
+                    message.getErrorMessages().add(
+                            "Trying to halt a search process that does not" + 
+                            " exist. Please stop hacking.");
+                    
+                    session.getBasicRemote().sendText(GSON.toJson(message));
+                } else {
+                    searchThread.finder.halt();
+                    final Message message = new Message();
+                    
+                    message.setStatus("success");
+                    message.searchParameters = new Message.SearchParameters();
+                    message.searchParameters
+                           .setSourceUrl(
+                                   incomingMessage
+                                           .searchParameters
+                                           .getSourceUrl());
+                    
+                    message.getErrorMessages().add(
+                        String.format(
+                            "Successfully halted the search from \"%s\" to \"%s\".", 
+                            incomingMessage.searchParameters.getSourceUrl(),
+                            incomingMessage.searchParameters.getTargetUrl()));
+                    
+                    session.getBasicRemote().sendText(GSON.toJson(message));
+                }
                 
-            case SearchRequest.HALT_ACTION:
-                halt(session);
-                break;
+                return;
+                
+            case Message.SEARCH_ACTION:
+                if (searchThread == null) {
+                    
+                } else {
+                    final Message message = new Message();
+                    message.setStatus("error");
+                    message.getErrorMessages()
+                           .add("Cannot run a new search while the previous did not finish.");
+                    
+                    session.getBasicRemote().sendText(GSON.toJson(message));
+                }
+                
+                return;
                 
             default:
-                throw new IllegalStateException("Should not happen.");
+                throw new IllegalStateException("Should not get here.");
         }
-        
-//        System.out.println(searchRequest.getExpansionDuration());
-//        System.out.println(searchRequest.getMasterSleepDuration());
-//        System.out.println(searchRequest.getMasterTrials());
-//        System.out.println(searchRequest.getNumberOfThreads());
-//        System.out.println(searchRequest.getSlaveSleepDuration());
-//        System.out.println(searchRequest.getSourceUrl());
-//        System.out.println(searchRequest.getTargetUrl());
-//        System.out.println(searchRequest.getWaitTimeout());
     }
     
     @OnClose
@@ -177,7 +206,7 @@ public final class SearchEndpoint {
     }
     
     private void search(final Session session, 
-                        final SearchRequest searchRequest) throws IOException {
+                        final Message searchRequest) throws IOException {
         
         final SearchThread searchThread =
                 new SearchThread(session,
@@ -199,12 +228,12 @@ public final class SearchEndpoint {
         private String targetTitle;
         
         SearchThread(final Session session, 
-                     final SearchRequest searchRequest) throws IOException {
+                     final Message message) throws IOException {
             
             this.session = session;
             
-            final String sourceUrl = searchRequest.getSourceUrl().trim();
-            final String targetUrl = searchRequest.getTargetUrl().trim();
+            final String sourceUrl = message.searchParameters.getSourceUrl().trim();
+            final String targetUrl = message.searchParameters.getTargetUrl().trim();
             final List<Exception> exceptionList = new ArrayList<>();
             
             try {
@@ -231,6 +260,8 @@ public final class SearchEndpoint {
             forwardNodeExpander  = new ForwardLinkExpander (sourceLanguageCode);
             backwardNodeExpander = new BackwardLinkExpander(targetLanguageCode);
             
+            final Message responseMessage = new Message();
+            
             try {
                 if (!forwardNodeExpander.isValidNode(sourceTitle)) {
                     sourceArticleValid = false;
@@ -240,12 +271,11 @@ public final class SearchEndpoint {
             }
             
             if (sourceArticleValid == false) {
-                exceptionList.add(
-                    new IllegalArgumentException(
+                responseMessage.getErrorMessages().add(
                         String.format(
                             "The source article \"%s\" was rejected by " + 
-                                "Wikipedia API.", 
-                            sourceUrl)));
+                            "Wikipedia API.", 
+                            sourceUrl));
             }
             
             try {
@@ -257,61 +287,50 @@ public final class SearchEndpoint {
             }
             
             if (targetArticleValid == false) {
-                exceptionList.add(
-                        new IllegalArgumentException(
+                responseMessage.getErrorMessages().add(
                         String.format(
                             "The target article \"%s\" was rejected by " + 
                                 "Wikipedia API.", 
-                            targetUrl)));
+                            targetUrl));
             }
             
             if (sourceUrl.equals(targetUrl)) {
-                exceptionList.add(
-                    new IllegalArgumentException(
+                responseMessage.getErrorMessages().add(
                         String.format(
                             "The source and target article URLs are same: "
                             + "\"%s\".", 
-                            sourceUrl)));
+                            sourceUrl));
             }
             
             if (!sourceLanguageCode.equals(targetLanguageCode)) {
-                exceptionList.add(
-                    new IllegalArgumentException(
+                responseMessage.getErrorMessages().add(
                         String.format(
                             "Different language codes: \"%s\" vs \"%s\".", 
                             sourceLanguageCode,
-                            targetLanguageCode)));
+                            targetLanguageCode));
             }
             
             if (sourceTitle.equals(targetTitle)) {
-                exceptionList.add(
-                    new IllegalArgumentException(
+                responseMessage.getErrorMessages().add(
                         "The source article URL and the target article URL " + 
-                                "are the same."));
-                
+                                "are the same.");
             }
             
-            if (!exceptionList.isEmpty()) {
-                final ErrorJsonObject errorJsonObject = new ErrorJsonObject();
-                
-                errorJsonObject.status = "error";
-                errorJsonObject.errorMessages =
-                        convertExceptionsToErrorMessages(exceptionList);
-                
-                final Gson gson = new Gson();
-                session.getBasicRemote().sendText(gson.toJson(errorJsonObject));
+            if (!responseMessage.getErrorMessages().isEmpty()) {
+                responseMessage.setStatus("error");
+                session.getBasicRemote().sendText(GSON.toJson(responseMessage));
                 return;
             }
             
             this.finder = 
                 ThreadPoolBidirectionalBFSPathFinderBuilder.
                     <String>begin()
-                    .withNumberOfMasterTrials            (searchRequest.getNumberOfThreads())
-                    .withJoinDurationMillis              (searchRequest.getExpansionDuration())
-                    .withLockWaitMillis                  (searchRequest.getWaitTimeout())
-                    .withNumberOfMasterTrials            (searchRequest.getMasterTrials())
-                    .withMasterThreadSleepDurationMillis (searchRequest.getMasterSleepDuration())
-                    .withSlaveThreadSleepDurationMillis  (searchRequest.getSlaveSleepDuration())
+                    .withNumberOfMasterTrials            (message.searchParameters.getNumberOfThreads())
+                    .withJoinDurationMillis              (message.searchParameters.getExpansionDuration())
+                    .withLockWaitMillis                  (message.searchParameters.getWaitTimeout())
+                    .withNumberOfMasterTrials            (message.searchParameters.getMasterTrials())
+                    .withMasterThreadSleepDurationMillis (message.searchParameters.getMasterSleepDuration())
+                    .withSlaveThreadSleepDurationMillis  (message.searchParameters.getSlaveSleepDuration())
                     .end();
         }
         
@@ -455,7 +474,7 @@ public final class SearchEndpoint {
     
     private static final class ErrorJsonObject {
         String status;
-        List<String> errorMessages;
+        String errorMessage;
     }
     
     private static String extractArticleTitle(final String url) {
@@ -538,5 +557,12 @@ public final class SearchEndpoint {
         }
         
         return errorMessageList;
+    }
+    
+    private static String buildUrl(final String languageCode, 
+                                   final String title) {
+        return String.format("https://%s.wikipedia.org/wiki/%s", 
+                             languageCode, 
+                             title);
     }
 }

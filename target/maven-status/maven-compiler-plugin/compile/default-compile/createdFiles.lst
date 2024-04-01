@@ -1,10 +1,12 @@
 com\github\coderodde\wikipedia\game\killer\SearchEndpoint$MultipleException.class
-com\github\coderodde\wikipedia\game\killer\SearchRequest.class
-com\github\coderodde\wikipedia\game\killer\SearchEndpoint$SolutionJsonObject.class
+com\github\coderodde\wikipedia\game\killer\model\decoders\MessageDecoder.class
+com\github\coderodde\wikipedia\game\killer\model\Message$SearchParameters.class
 com\github\coderodde\wikipedia\game\killer\SearchEndpoint$ErrorJsonObject.class
 com\github\coderodde\wikipedia\game\killer\SearchEndpoint$ForwardLinkExpander.class
-com\github\coderodde\wikipedia\game\killer\SearchRequestEncoder.class
-com\github\coderodde\wikipedia\game\killer\SearchEndpoint$SearchThread.class
+com\github\coderodde\wikipedia\game\killer\SearchEndpoint$HaltJsonObject.class
 com\github\coderodde\wikipedia\game\killer\SearchEndpoint.class
-com\github\coderodde\wikipedia\game\killer\SearchRequestDecoder.class
 com\github\coderodde\wikipedia\game\killer\SearchEndpoint$BackwardLinkExpander.class
+com\github\coderodde\wikipedia\game\killer\SearchEndpoint$SolutionJsonObject.class
+com\github\coderodde\wikipedia\game\killer\model\Message.class
+com\github\coderodde\wikipedia\game\killer\SearchEndpoint$SearchThread.class
+com\github\coderodde\wikipedia\game\killer\model\encoders\MessageEncoder.class

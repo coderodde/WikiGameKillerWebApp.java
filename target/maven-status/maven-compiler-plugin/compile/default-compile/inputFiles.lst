@@ -1,4 +1,4 @@
-C:\Users\rodio\OneDrive\Documents\NetBeansProjects\WikiGameKillerWeb.java\src\main\java\com\github\coderodde\wikipedia\game\killer\SearchRequestEncoder.java
-C:\Users\rodio\OneDrive\Documents\NetBeansProjects\WikiGameKillerWeb.java\src\main\java\com\github\coderodde\wikipedia\game\killer\SearchRequest.java
+C:\Users\rodio\OneDrive\Documents\NetBeansProjects\WikiGameKillerWeb.java\src\main\java\com\github\coderodde\wikipedia\game\killer\model\encoders\MessageEncoder.java
+C:\Users\rodio\OneDrive\Documents\NetBeansProjects\WikiGameKillerWeb.java\src\main\java\com\github\coderodde\wikipedia\game\killer\model\Message.java
 C:\Users\rodio\OneDrive\Documents\NetBeansProjects\WikiGameKillerWeb.java\src\main\java\com\github\coderodde\wikipedia\game\killer\SearchEndpoint.java
-C:\Users\rodio\OneDrive\Documents\NetBeansProjects\WikiGameKillerWeb.java\src\main\java\com\github\coderodde\wikipedia\game\killer\SearchRequestDecoder.java
+C:\Users\rodio\OneDrive\Documents\NetBeansProjects\WikiGameKillerWeb.java\src\main\java\com\github\coderodde\wikipedia\game\killer\model\decoders\MessageDecoder.java

@@ -1,16 +1,16 @@
 package com.github.coderodde.wikipedia.game.killer.model.encoders;
 
-import com.github.coderodde.wikipedia.game.killer.model.SearchRequest;
+import com.github.coderodde.wikipedia.game.killer.model.Message;
 import com.google.gson.Gson;
 import javax.websocket.EncodeException;
 import javax.websocket.Encoder;
 import javax.websocket.EndpointConfig;
 
-public final class SearchRequestEncoder implements Encoder.Text<SearchRequest> {
+public final class MessageEncoder implements Encoder.Text<Message> {
     
     private static final Gson GSON = new Gson();
 
-    public String encode(final SearchRequest searchRequest)
+    public String encode(final Message searchRequest)
             throws EncodeException {
         return GSON.toJson(searchRequest);
     }
