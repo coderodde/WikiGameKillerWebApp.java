@@ -163,6 +163,14 @@ public final class SearchEndpoint {
                                 incomingMessage.searchParameters.sourceUrl,
                                 incomingMessage.searchParameters.targetUrl,
                             });
+                    
+                    final SearchThread thread = 
+                            new SearchThread(session,
+                                             incomingMessage);
+                    
+                    SESSION_TO_THRED_MAP.put(session, thread);
+                    
+                    thread.start();
                 } else {
                     final Message message = new Message();
                     message.status = "error";
@@ -249,8 +257,8 @@ public final class SearchEndpoint {
         private ThreadPoolBidirectionalBFSPathFinder<String> finder;
         private AbstractNodeExpander<String> forwardNodeExpander;
         private AbstractNodeExpander<String> backwardNodeExpander;
-        private final String sourceLanguageCode;
-        private final String targetLanguageCode;
+        private String sourceLanguageCode;
+        private String targetLanguageCode;
         private String sourceTitle;
         private String targetTitle;
         
@@ -262,6 +270,7 @@ public final class SearchEndpoint {
             final String sourceUrl = message.searchParameters.sourceUrl.trim();
             final String targetUrl = message.searchParameters.targetUrl.trim();
             final List<Exception> exceptionList = new ArrayList<>();
+            final Message responseMessage = new Message();
             
             try {
                 checkSourceUrl(sourceUrl);
@@ -275,6 +284,12 @@ public final class SearchEndpoint {
                 exceptionList.add(ex);
             }
             
+            if (!exceptionList.isEmpty()) {
+                responseMessage.status = "error";
+                responseMessage.errorMessages = toErrorMessages(exceptionList);
+                return;
+            }
+            
             sourceTitle = extractArticleTitle(sourceUrl);
             targetTitle = extractArticleTitle(targetUrl);
             
@@ -286,8 +301,6 @@ public final class SearchEndpoint {
             
             forwardNodeExpander  = new ForwardLinkExpander (sourceLanguageCode);
             backwardNodeExpander = new BackwardLinkExpander(targetLanguageCode);
-            
-            final Message responseMessage = new Message();
             
             try {
                 if (!forwardNodeExpander.isValidNode(sourceTitle)) {
@@ -337,14 +350,9 @@ public final class SearchEndpoint {
                             targetLanguageCode));
             }
             
-            if (sourceTitle.equals(targetTitle)) {
-                responseMessage.errorMessages.add(
-                        "The source article URL and the target article URL " + 
-                                "are the same.");
-            }
-            
             if (!responseMessage.errorMessages.isEmpty()) {
                 responseMessage.status = "error";
+                responseMessage.errorMessages = toErrorMessages(exceptionList);
                 session.getBasicRemote().sendText(GSON.toJson(responseMessage));
                 return;
             }
@@ -378,27 +386,30 @@ public final class SearchEndpoint {
                     .withBackwardNodeExpander(backwardNodeExpander)
                     .search();
             
-            final SolutionJsonObject solutionJsonObject = 
-                    new SolutionJsonObject();
-            
-            solutionJsonObject.duration = finder.getDuration();
-            solutionJsonObject.numberOfExpandedNodes = 
-                    finder.getNumberOfExpandedNodes();
-            
-            solutionJsonObject.path = path;
-            solutionJsonObject.status = "solutionFound";
-            
-            final Gson gson = new Gson();
-            final String json = gson.toJson(solutionJsonObject);
+            final Message responseMessage = new Message();
+            responseMessage.status = "solutionFound";
+            responseMessage.urlPath = path;
             
             try {
-                session.getBasicRemote().sendText(json);
-            } catch (IOException ex) {
-                LOGGER.log(Level.SEVERE,
-                           "Could not send the result JSON to frontend: {0}.",
-                           ex.getMessage());
+                session.getBasicRemote().sendText(GSON.toJson(responseMessage));
+            } catch (final IOException ex) {
+                LOGGER.log(
+                        Level.SEVERE, 
+                        "Could not send existing path: {0}.", 
+                        path.toString());
             }
         }
+    }
+    
+    private static List<String> 
+        toErrorMessages(final List<Exception> exceptionList) {
+        final List<String> errorMessageList = new ArrayList<>();
+        
+        for (final Exception exception : exceptionList) {
+            errorMessageList.add(exception.getMessage());
+        }
+        
+        return errorMessageList;
     }
     
     /**

@@ -12,6 +12,7 @@ public final class Message {
     public String status;
     public String action;
     public SearchParameters searchParameters;
+    public List<String> urlPath;
     public List<String> errorMessages = new ArrayList<>();
     public List<String> infoMessages  = new ArrayList<>();
 

@@ -39,12 +39,12 @@ function constructWebSocket() {
 ;
 
 function resetParametersToDefaults() {
-    document.getElementById("threadsInput").value = "256";
+    document.getElementById("threadsInput")          .value = "256";
     document.getElementById("expansionDurationInput").value = "4000";
-    document.getElementById("waitTimeoutInput").value = "2";
-    document.getElementById("trialsInput").value = "200";
-    document.getElementById("masterSleepInput").value = "15";
-    document.getElementById("slaveSleepInput").value = "1";
+    document.getElementById("waitTimeoutInput")      .value = "2";
+    document.getElementById("trialsInput")           .value = "200";
+    document.getElementById("masterSleepInput")      .value = "15";
+    document.getElementById("slaveSleepInput")       .value = "1";
 }
 
 function sendData(ws, json) {
