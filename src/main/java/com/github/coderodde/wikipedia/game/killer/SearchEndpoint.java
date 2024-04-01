@@ -1,8 +1,15 @@
 package com.github.coderodde.wikipedia.game.killer;
 
+import com.github.coderodde.graph.pathfinding.delayed.AbstractNodeExpander;
 import com.github.coderodde.graph.pathfinding.delayed.impl.ThreadPoolBidirectionalBFSPathFinder;
 import com.github.coderodde.graph.pathfinding.delayed.impl.ThreadPoolBidirectionalBFSPathFinderBuilder;
+import com.github.coderodde.graph.pathfinding.delayed.impl.ThreadPoolBidirectionalBFSPathFinderSearchBuilder;
+import com.github.coderodde.wikipedia.graph.expansion.BackwardWikipediaGraphNodeExpander;
+import com.github.coderodde.wikipedia.graph.expansion.ForwardWikipediaGraphNodeExpander;
 import java.io.IOException;
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.logging.Level;
@@ -20,11 +27,34 @@ import javax.websocket.server.ServerEndpoint;
                 encoders = SearchRequestEncoder.class)
 public final class SearchEndpoint {
     
+    private static final String SOURCE_TARGET_SAME_JSON = 
+            """
+            {
+                "status":"sourceTargetEqual",
+                "source":"%s"
+            }
+            """;
+    
+    private static final String LANGUAGE_CODES_DIFFERENT = 
+            """
+            {
+                "status":"differentLanguageCodes",
+                "sourceLanguage":"%s",
+                "targetLanguage":"%s"
+            }
+            """;
+    
+    private static final String HALT_JSON = 
+            """
+            {
+                "status":"halt"
+            }
+            """;
+    
     private static final long CONNECTION_TIMEOUT_MILLIS = 1000 * 120; // 120 s.
     
-    private static final Map<Session, 
-                             ThreadPoolBidirectionalBFSPathFinder<String>> 
-            STATE_MAP = new ConcurrentHashMap<>();
+    private static final Map<Session, SearchThread> SESSION_TO_THRED_MAP = 
+                new ConcurrentHashMap<>();
     
     private static final Logger LOGGER = 
             Logger.getLogger(SearchEndpoint.class.getSimpleName());
@@ -49,11 +79,11 @@ public final class SearchEndpoint {
         
         switch (searchRequest.getAction()) {
             case SearchRequest.SEARCH_ACTION:
-                search(searchRequest);
+                search(session, searchRequest);
                 break;
                 
             case SearchRequest.HALT_ACTION:
-                halt();
+                halt(session);
                 break;
                 
             default:
@@ -74,42 +104,99 @@ public final class SearchEndpoint {
     public void onClose(final Session session) throws IOException,
                                                       EncodeException {
         LOGGER.log(Level.WARNING, "Session closed.");
-        STATE_MAP.remove(session);
+        SESSION_TO_THRED_MAP.remove(session);
     }
     
     @OnError
     public void onError(final Session session, final Throwable throwable) {
         LOGGER.log(Level.SEVERE, 
-                   "Error in {}: {}", 
+                   "Error in {0}: {1}", 
                    new Object[]{ SearchEndpoint.this.getClass().getName(), 
                                  throwable.getMessage() 
                    });
         
-        STATE_MAP.remove(session);
+        SESSION_TO_THRED_MAP.remove(session);
     }
     
-    private void search(final SearchRequest searchRequest) {
+    private void halt(final Session session) throws IOException {
+        final SearchThread searchThread = SESSION_TO_THRED_MAP.get(session);
         
+        if (searchThread == null) {
+            LOGGER.log(Level.INFO, "No thread for session {0}.", session);
+            return;
+        }
+        
+        searchThread.finder.halt();
+        
+        try {
+            searchThread.join();
+        } catch (final InterruptedException ex) {
+            LOGGER.log(Level.WARNING, 
+                       "Search thread interrupted: {0}.", 
+                       ex.getMessage());
+        }
+        
+        SESSION_TO_THRED_MAP.remove(session);
+        session.getBasicRemote().sendText(HALT_JSON);
+    }
+    
+    private void search(final Session session, 
+                        final SearchRequest searchRequest) throws IOException {
+        
+        final SearchThread searchThread =
+                new SearchThread(session,
+                                 searchRequest);
+        
+        SESSION_TO_THRED_MAP.put(session, searchThread);
+        
+        searchThread.start();
     }
     
     private static final class SearchThread extends Thread {
-        private final Session session;
-        private final ThreadPoolBidirectionalBFSPathFinder<String> finder;
+        private ThreadPoolBidirectionalBFSPathFinder<String> finder;
+        private AbstractNodeExpander<String> forwardNodeExpander;
+        private AbstractNodeExpander<String> backwardNodeExpander;
         private final SearchRequest searchRequest;
-        private final String languageCodeSource;
-        private final String languageCodeTarget;
-        private final String sourceTitle;
-        private final String targetTitle;
+        private String sourceLanguageCode;
+        private String targetLanguageCode;
+        private String sourceTitle;
+        private String targetTitle;
         
         SearchThread(final Session session, 
-                     final SearchRequest searchRequest) {
-            this.session = session;
+                     final SearchRequest searchRequest) throws IOException {
+            
             this.searchRequest = searchRequest;
             
-            sourceTitle = extractArticleTitle(searchRequest.getSourceUrl().trim());
-            targetTitle = extractArticleTitle(searchRequest.getTargetUrl().trim());
-            languageCodeSource = getLanguageCode(sourceTitle);
-            languageCodeTarget = getLanguageCode(targetTitle);
+            final String sourceUrl = searchRequest.getSourceUrl().trim();
+            final String targetUrl = searchRequest.getTargetUrl().trim();
+            
+            if (sourceUrl.equals(targetUrl)) {
+                session.getBasicRemote()
+                       .sendText(
+                               String.format(
+                                       SOURCE_TARGET_SAME_JSON, 
+                                       sourceUrl));
+                return;
+            }
+            
+            sourceTitle = extractArticleTitle(sourceUrl);
+            targetTitle = extractArticleTitle(targetUrl);
+            
+            sourceLanguageCode = getLanguageCode(sourceTitle);
+            targetLanguageCode = getLanguageCode(targetTitle);
+            
+            if (!sourceLanguageCode.equals(targetLanguageCode)) {
+                session.getBasicRemote()
+                       .sendText(
+                               String.format(
+                                       LANGUAGE_CODES_DIFFERENT,
+                                       sourceLanguageCode,
+                                       targetLanguageCode));
+                return;
+            }
+            
+            forwardNodeExpander  = new ForwardLinkExpander(sourceLanguageCode);
+            backwardNodeExpander = new BackwardLinkExpander(targetLanguageCode);
             
             if (sourceTitle.equals(targetTitle)) {
                 session.getBasicRemote().sendText("{\"status\"}");
@@ -125,22 +212,122 @@ public final class SearchEndpoint {
                     .withMasterThreadSleepDurationMillis (searchRequest.getMasterSleepDuration())
                     .withSlaveThreadSleepDurationMillis  (searchRequest.getSlaveSleepDuration())
                     .end();
-            
-            this.sourceTitle = extractArticleTitle(searchRequest.
         }
         
         @Override
         public void run() {
-            final List<String> result
+            final List<String> result = 
+                    ThreadPoolBidirectionalBFSPathFinderSearchBuilder
+                    .<String>withPathFinder(finder)
+                    .withSourceNode(sourceTitle)
+                    .withTargetNode(targetTitle)
+                    .withForwardNodeExpander(forwardNodeExpander)
+                    .withBackwardNodeExpander(backwardNodeExpander)
+                    .search();
+            
+                    
+        }
+    }
+    
+    /**
+     * This class implements the forward link expander.
+     */
+    private static final class ForwardLinkExpander 
+            extends AbstractNodeExpander<String> {
+
+        private final ForwardWikipediaGraphNodeExpander expander;
+        
+        public ForwardLinkExpander(final String languageCode) {
+            this.expander = new ForwardWikipediaGraphNodeExpander(languageCode);
         }
         
-        void halt() {
-            final Lis
+        /**
+         * Generate all the links that this article links to.
+         * 
+         * @param article the source article of each link.
+         * 
+         * @return all the article titles that {@code article} links to.
+         */
+        @Override
+        public List<String> generateSuccessors(final String article) {
+            try {
+                return extractArticleListTitles(expander.getNeighbors(article));
+            } catch (Exception ex) {
+                return Collections.<String>emptyList();
+            }
+        }
+
+        /**
+         * {@inheritDoc }
+         */
+        @Override
+        public boolean isValidNode(final String article) {
+            try {
+                return expander.isValidNode(article);
+            } catch (Exception ex) {
+                return false;
+            }
+        }
+    }
+    
+    /**
+     * This class implements the backward link expander. 
+     */
+    private static final class BackwardLinkExpander 
+            extends AbstractNodeExpander<String> {
+
+        private final BackwardWikipediaGraphNodeExpander expander;
+        
+        public BackwardLinkExpander(final String languageCode) {
+            this.expander = 
+                    new BackwardWikipediaGraphNodeExpander(languageCode);
+        }
+        
+        /**
+         * Generate all the links pointing to the article {@code article}.
+         * 
+         * @param article the target article of each link.
+         * 
+         * @return all the article titles linking to {@code article}.
+         * 
+         * @throws java.lang.Exception if something fails.
+         */
+        @Override
+        public List<String> generateSuccessors(final String article) {
+            try {
+                return extractArticleListTitles(expander.getNeighbors(article));
+            } catch (Exception ex) {
+                return Collections.<String>emptyList();
+            }
+        }
+        
+        /**
+         * {@inheritDoc }
+         */
+        @Override
+        public boolean isValidNode(final String article) {
+            try {
+                return expander.isValidNode(article);
+            } catch (Exception ex) {
+                return false;
+            }
         }
     }
     
     private static String extractArticleTitle(final String url) {
         return url.substring(url.lastIndexOf('/') + 1);
+    }
+    
+    private static List<String> 
+        extractArticleListTitles(final List<String> urls) {
+        
+        final List<String> titleList = new ArrayList<>(urls.size());
+        
+        for (final String url : urls) {
+            titleList.add(extractArticleTitle(url));
+        }
+        
+        return titleList;
     }
     
     private static String getLanguageCode(String url) {
