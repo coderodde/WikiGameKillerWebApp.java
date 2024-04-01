@@ -2,182 +2,12 @@
 <html>
     <head>
         <meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
-        
-        <style>
-            body {
-                font-weight: bold;
-                font-size: 12px;
-                font-family: monospace;
-            }
-            
-            .paramInput {
-                width: 300px;
-                padding: 10px 10px;
-                margin: 8px 0;
-                box-sizing: border-box;
-                border: 3px solid #ccc;
-                -webkit-transition: 0.8s;
-                transition: 0.8s;
-                outline: none;
-                font-family: monospace;
-                font-size: 13px;
-                font-weight: bold;
-            }
-            
-            .paramInput:focus {
-                border: 3px solid #555;
-                font-family: monospace;
-                font-size: 13px;
-                font-weight: bold;
-            }
-            
-            .paramInput::placeholder {
-                font-family: monospace;
-                font-size: 13px;
-                font-weight: bold;
-            }
-            
-            .paramInput:error {
-                border: 3px solid #555;
-                font-family: monospace;
-                font-size: 13px;
-                font-weight: bold;
-                border-color: #C01B00;
-            }
-            
-        </style>
-        
-        <script>
-            let socket;
-            const socketUrl = constructWebSocketUrl();
-            
-            function constructWebSocketUrl() {
-                const host = document.location.host;
-                const path = document.location.pathname;
-                const webSocketUrl = `ws://${host}${path}search`;
-                
-                console.log(`Host: ${host}`);
-                console.log(`Path: ${path}`);
-                console.log(`WebSocket URL: ${webSocketUrl}`);
-                
-                return webSocketUrl;
-            }
-            
-            function constructWebSocket() {
-                
-                socket = new WebSocket(constructWebSocketUrl());
-                
-                socket.onopen = (event) => {
-                    console.log("onopen. Event: ", event);
-                };
-                
-                socket.onmessage = (event) => {
-                    const text = event.data;
-                    console.log(`Received text: ${text}.`);
-                };
-                
-                socket.onclose = (event) => {
-                    console.log("onclose. Event: ", event);
-                };
-                
-                socket.onerror = (event) => {
-                    console.log("onerror. Event: ", event);
-                };
-                
-                return socket;
-            };
-            
-            function resetParametersToDefaults() {
-                document.getElementById("threadsInput")          .value = "256";
-                document.getElementById("expansionDurationInput").value = "4000";
-                document.getElementById("waitTimeoutInput")      .value = "2";
-                document.getElementById("trialsInput")           .value = "200";
-                document.getElementById("masterSleepInput")      .value = "15";
-                document.getElementById("slaveSleepInput")       .value = "1";
-            }
-            
-            function spawnSearch() {
-                socket = constructWebSocket();
-                
-                const searchObject = {
-                    "action":"search",
-                    "status":"ignoreParam",
-                    "searchParameters": {
-                        "sourceUrl":           document.getElementById("sourceUrlInput")        .value,
-                        "targetUrl":           document.getElementById("targetUrlInput")        .value,
-                        "numberOfThreads":     Number(document.getElementById("threadsInput")          .value),
-                        "expansionDuration":   Number(document.getElementById("expansionDurationInput").value),
-                        "waitTimeout":         Number(document.getElementById("waitTimeoutInput")      .value),
-                        "masterTrials":        Number(document.getElementById("trialsInput")           .value),
-                        "masterSleepDuration": Number(document.getElementById("masterSleepInput")      .value),
-                        "slaveSleepDuration":  Number(document.getElementById("slaveSleepInput")       .value),
-                    },
-                    "errorMessages":[],
-                    "infoMessages":[]
-                };
-                
-                const json = JSON.stringify(searchObject);
-                const webSocket = constructWebSocket();
-                
-                console.log("json: ", json);
-                console.log("webSocket:", webSocket);
-                
-                function sendData(ws, json) {
-                    if (ws.readyState) {
-                        ws.send(json);
-                    } else {
-                        setTimeout(function() {sendData(ws, json)}, 100);
-                    }
-                }   
-                
-                sendData(webSocket, json);
-            }
-            
-            function wikipediaUrlIsValid(url) {
-                return /^(http(s)?:\/\/)?..\.wikipedia\.org\/wiki\/.+$/.test(url);
-            }
-            
-            function isPositiveInteger(str) {
-                if (/^\d+$/.test(str)) {
-                    return parseInt(str) > 0;
-                }
-                
-                return false;
-            }
-            
-            function colorInputBorder(elem) {
-                document.getElementById("sourceUrlInput").style.borderColor = "red";
-            }
-            
-            function onChangeThreads() {
-                const input = document.getElementById("threadsInput");
-                const currentValue = input.value;
-                
-                if (isPositiveInteger(currentValue)) {
-                    input.value = currentValue;
-                } else {
-                    alert("shit");
-                }
-            }
-            
-            function halt() {
-                if (webSocket === null) {
-                    console.log(`Cannot halt. Socket is closed.`);
-                    return;
-                }
-                
-                const requestObject = {
-                    "action":"halt"
-                };
-                
-                sendData(JSON.stringify(requestObject));
-                webSocket = null;
-            }
-        </script>
+        <link href="styles/styles.css" rel="stylesheet" />
+        <script src="js/script.js" defer="1"></script>
     </head>
     <body>
         <h1>WikiGameKiller 1.0.0</h1>
-        
+
         <div id="input-form-div">
             <form action="/search" method="GET">
                 <table>
@@ -189,7 +19,7 @@
                                    onchange="colorInputBorder(null);"
                                    placeholder="Source article URL"/> </td>
                     </tr>
-                    
+
                     <tr>
                         <td><label for="targetUrlInput">Target URL:</label></td>
                         <td><input type="text"
@@ -215,7 +45,7 @@
                                    value="4000"
                                    placeholder="Milliseconds"/> </td>
                     </tr>
-                    
+
                     <tr>
                         <td><label for="waitTimeoutInput">Maximum mutex timeout</label></td>
                         <td><input type="number"
@@ -232,7 +62,7 @@
                                    class="paramInput"
                                    value="200" /> </td>
                     </tr>
-                    
+
                     <tr>
                         <td><label for="masterSleepInput">Master sleep duration:</label></td>
                         <td><input type="number"
@@ -251,7 +81,7 @@
                                    placeholder="Milliseconds"/> </td>
                     </tr>
                 </table>
-                
+
             </form>
             <button id="doSearch" onclick="spawnSearch();">Search</button> 
             <button id="setDefaultsButton" onclick="resetParametersToDefaults();">Set default parameters</button>
@@ -259,8 +89,20 @@
         </div>
         
         <div id="result-div">
-            
+
         </div>
+        
+        <div id="logWindow">
+            <h2>Log window</h2>
+            <div id="log">
+                
+            </div>
+        </div>
+        
+        <script>
+            console.log("Hello!");
+        </script>
+        
         <footer>By Rodion "coderodde" Efremov. Copyleft 2024</footer>
     </body>
 </html>

@@ -101,7 +101,7 @@ public final class SearchEndpoint {
     public void onMessage(final Session session, 
                           final Message incomingMessage) 
             throws IOException, EncodeException {
-        System.out.println("yeas");
+        
         final SearchThread searchThread = SESSION_TO_THRED_MAP.get(session);
         final String action = incomingMessage.action;
         
@@ -115,6 +115,10 @@ public final class SearchEndpoint {
                             " exist. Please stop hacking.");
                     
                     session.getBasicRemote().sendText(GSON.toJson(message));
+                    
+                    LOGGER.log(
+                            Level.WARNING, 
+                            "Halting while there is no current search process.");
                 } else {
                     searchThread.finder.halt();
                     final Message message = new Message();
@@ -126,6 +130,11 @@ public final class SearchEndpoint {
                             .searchParameters
                             .sourceUrl;
                     
+                    message.searchParameters.targetUrl = 
+                            incomingMessage
+                            .searchParameters
+                            .targetUrl;
+                    
                     message.infoMessages.add(
                         String.format(
                             "Successfully halted the search from \"%s\" to \"%s\".", 
@@ -133,18 +142,37 @@ public final class SearchEndpoint {
                             incomingMessage.searchParameters.targetUrl));
                     
                     session.getBasicRemote().sendText(GSON.toJson(message));
+                    
+                    LOGGER.log(
+                            Level.INFO, 
+                            "Halting the search process from \"{0}\" to \"{1}\".",
+                            new Object[]{
+                                incomingMessage.searchParameters.sourceUrl,
+                                incomingMessage.searchParameters.targetUrl,
+                            });
                 }
                 
                 return;
                 
             case Message.SEARCH_ACTION:
                 if (searchThread == null) {
-                    
+                    LOGGER.log(
+                            Level.INFO,
+                            "Beginning search from \"{0}\" to \"{1}\".",
+                            new Object[]{
+                                incomingMessage.searchParameters.sourceUrl,
+                                incomingMessage.searchParameters.targetUrl,
+                            });
                 } else {
                     final Message message = new Message();
                     message.status = "error";
                     message.errorMessages
                            .add("Cannot run a new search while the previous did not finish.");
+                    
+                    LOGGER.log(
+                            Level.WARNING,
+                            "A search process is still running. " + 
+                                    "Please stop hacking.");
                     
                     session.getBasicRemote().sendText(GSON.toJson(message));
                 }

@@ -1,0 +1,55 @@
+body {
+    font-weight: bold;
+    font-size: 12px;
+    font-family: monospace;
+}
+
+.paramInput {
+    width: 300px;
+    padding: 10px 10px;
+    margin: 8px 0;
+    box-sizing: border-box;
+    border: 3px solid #ccc;
+    -webkit-transition: 0.8s;
+    transition: 0.8s;
+    outline: none;
+    font-family: monospace;
+    font-size: 13px;
+    font-weight: bold;
+}
+
+.paramInput:focus {
+    border: 3px solid #555;
+    font-family: monospace;
+    font-size: 13px;
+    font-weight: bold;
+}
+
+.paramInput::placeholder {
+    font-family: monospace;
+    font-size: 13px;
+    font-weight: bold;
+}
+
+.paramInput:error {
+    border: 3px solid #555;
+    font-family: monospace;
+    font-size: 13px;
+    font-weight: bold;
+    border-color: #C01B00;
+}
+
+#logTextArea {
+    font-family: monospace;
+    font-size: 12px;
+    font-weight: bold;
+}
+
+.logInfoClass {
+    color: black;
+}
+
+.logErrorClass {
+    color: #C01B00;
+}
+
