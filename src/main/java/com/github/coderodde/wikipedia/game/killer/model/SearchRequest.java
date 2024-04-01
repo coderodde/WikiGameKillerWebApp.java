@@ -1,9 +1,9 @@
-package com.github.coderodde.wikipedia.game.killer;
+package com.github.coderodde.wikipedia.game.killer.model;
 
 public final class SearchRequest {
     
-    static final String SEARCH_ACTION = "search";
-    static final String HALT_ACTION = "halt";
+    public static final String SEARCH_ACTION = "search";
+    public static final String HALT_ACTION = "halt";
     
     private String action;
     private String sourceUrl;

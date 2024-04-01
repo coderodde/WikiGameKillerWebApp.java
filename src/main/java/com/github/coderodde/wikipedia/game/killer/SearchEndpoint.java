@@ -1,9 +1,14 @@
 package com.github.coderodde.wikipedia.game.killer;
 
+import com.github.coderodde.wikipedia.game.killer.model.decoders.SearchRequestDecoder;
+import com.github.coderodde.wikipedia.game.killer.model.encoders.SearchRequestEncoder;
+import com.github.coderodde.wikipedia.game.killer.model.SearchRequest;
 import com.github.coderodde.graph.pathfinding.delayed.AbstractNodeExpander;
 import com.github.coderodde.graph.pathfinding.delayed.impl.ThreadPoolBidirectionalBFSPathFinder;
 import com.github.coderodde.graph.pathfinding.delayed.impl.ThreadPoolBidirectionalBFSPathFinderBuilder;
 import com.github.coderodde.graph.pathfinding.delayed.impl.ThreadPoolBidirectionalBFSPathFinderSearchBuilder;
+import com.github.coderodde.wikipedia.game.killer.model.decoders.HaltOperationDecoder;
+import com.github.coderodde.wikipedia.game.killer.model.encoders.HaltOperationEncoder;
 import com.github.coderodde.wikipedia.graph.expansion.BackwardWikipediaGraphNodeExpander;
 import com.github.coderodde.wikipedia.graph.expansion.ForwardWikipediaGraphNodeExpander;
 import com.google.gson.Gson;
@@ -25,8 +30,8 @@ import javax.websocket.Session;
 import javax.websocket.server.ServerEndpoint;
 
 @ServerEndpoint(value = "/search",
-                decoders = SearchRequestDecoder.class,
-                encoders = SearchRequestEncoder.class)
+                decoders = { SearchRequestDecoder.class, HaltOperationDecoder.class },
+                encoders = { SearchRequestEncoder.class, HaltOperationEncoder.class })
 public final class SearchEndpoint {
     
     /**
@@ -160,7 +165,15 @@ public final class SearchEndpoint {
         }
         
         SESSION_TO_THRED_MAP.remove(session);
-        session.getBasicRemote().sendText(HALT_JSON);
+        
+        final HaltJsonObject haltJsonObject = new HaltJsonObject();
+        
+        haltJsonObject.status = "halt";
+        haltJsonObject.duration = searchThread.finder.getDuration();
+        haltJsonObject.numberOfExpandedNodes = 
+                searchThread.finder.getNumberOfExpandedNodes();
+        
+        session.getBasicRemote().sendText(new Gson().toJson(haltJsonObject));
     }
     
     private void search(final Session session, 
@@ -180,40 +193,46 @@ public final class SearchEndpoint {
         private ThreadPoolBidirectionalBFSPathFinder<String> finder;
         private AbstractNodeExpander<String> forwardNodeExpander;
         private AbstractNodeExpander<String> backwardNodeExpander;
-        private String sourceLanguageCode;
-        private String targetLanguageCode;
+        private final String sourceLanguageCode;
+        private final String targetLanguageCode;
         private String sourceTitle;
         private String targetTitle;
         
         SearchThread(final Session session, 
                      final SearchRequest searchRequest) throws IOException {
+            
             this.session = session;
             
             final String sourceUrl = searchRequest.getSourceUrl().trim();
             final String targetUrl = searchRequest.getTargetUrl().trim();
-            
-            final MultipleException multipleException = new MultipleException();
+            final List<Exception> exceptionList = new ArrayList<>();
             
             try {
                 checkSourceUrl(sourceUrl);
             } catch (final IllegalArgumentException ex) {
-                multipleException.addException(ex);
+                exceptionList.add(ex);
             }
             
             try {
                 checkTargetUrl(targetUrl);
             } catch (final IllegalArgumentException ex) {
-                multipleException.addException(ex);
+                exceptionList.add(ex);
             }
             
-            final String sourceArticleTitle = extractArticleTitle(sourceUrl);
-            final String targetArticleTitle = extractArticleTitle(targetUrl);
+            sourceTitle = extractArticleTitle(sourceUrl);
+            targetTitle = extractArticleTitle(targetUrl);
             
             boolean sourceArticleValid = true;
             boolean targetArticleValid = true;
             
+            sourceLanguageCode = getLanguageCode(sourceUrl);
+            targetLanguageCode = getLanguageCode(targetUrl);
+            
+            forwardNodeExpander  = new ForwardLinkExpander (sourceLanguageCode);
+            backwardNodeExpander = new BackwardLinkExpander(targetLanguageCode);
+            
             try {
-                if (!forwardNodeExpander.isValidNode(sourceArticleTitle)) {
+                if (!forwardNodeExpander.isValidNode(sourceTitle)) {
                     sourceArticleValid = false;
                 }
             } catch (final Exception ex) {
@@ -221,7 +240,7 @@ public final class SearchEndpoint {
             }
             
             if (sourceArticleValid == false) {
-                multipleException.addException(
+                exceptionList.add(
                     new IllegalArgumentException(
                         String.format(
                             "The source article \"%s\" was rejected by " + 
@@ -230,7 +249,7 @@ public final class SearchEndpoint {
             }
             
             try {
-                if (!backwardNodeExpander.isValidNode(targetArticleTitle)) {
+                if (!backwardNodeExpander.isValidNode(targetTitle)) {
                     targetArticleValid = false;
                 }
             } catch (final Exception ex) {
@@ -238,8 +257,8 @@ public final class SearchEndpoint {
             }
             
             if (targetArticleValid == false) {
-                multipleException.addException(
-                    new IllegalArgumentException(
+                exceptionList.add(
+                        new IllegalArgumentException(
                         String.format(
                             "The target article \"%s\" was rejected by " + 
                                 "Wikipedia API.", 
@@ -247,7 +266,7 @@ public final class SearchEndpoint {
             }
             
             if (sourceUrl.equals(targetUrl)) {
-                multipleException.addException(
+                exceptionList.add(
                     new IllegalArgumentException(
                         String.format(
                             "The source and target article URLs are same: "
@@ -255,11 +274,8 @@ public final class SearchEndpoint {
                             sourceUrl)));
             }
             
-            sourceLanguageCode = getLanguageCode(sourceTitle);
-            targetLanguageCode = getLanguageCode(targetTitle);
-            
             if (!sourceLanguageCode.equals(targetLanguageCode)) {
-                multipleException.addException(
+                exceptionList.add(
                     new IllegalArgumentException(
                         String.format(
                             "Different language codes: \"%s\" vs \"%s\".", 
@@ -267,25 +283,20 @@ public final class SearchEndpoint {
                             targetLanguageCode)));
             }
             
-            forwardNodeExpander  = new ForwardLinkExpander(sourceLanguageCode);
-            backwardNodeExpander = new BackwardLinkExpander(targetLanguageCode);
-            
             if (sourceTitle.equals(targetTitle)) {
-                multipleException.addException(
+                exceptionList.add(
                     new IllegalArgumentException(
                         "The source article URL and the target article URL " + 
                                 "are the same."));
                 
             }
             
-            
-            if (!multipleException.getExceptionList().isEmpty()) {
+            if (!exceptionList.isEmpty()) {
                 final ErrorJsonObject errorJsonObject = new ErrorJsonObject();
                 
                 errorJsonObject.status = "error";
                 errorJsonObject.errorMessages =
-                        convertToErrorMessages(
-                                multipleException.getExceptionList());
+                        convertExceptionsToErrorMessages(exceptionList);
                 
                 final Gson gson = new Gson();
                 session.getBasicRemote().sendText(gson.toJson(errorJsonObject));
@@ -429,6 +440,12 @@ public final class SearchEndpoint {
         }
     }
     
+    private static final class HaltJsonObject {
+        String status;
+        long duration;
+        int numberOfExpandedNodes;
+    }
+    
     private static final class SolutionJsonObject {
         String status;
         long duration;
@@ -510,7 +527,7 @@ public final class SearchEndpoint {
         }
     }
 
-    private static List<String> convertToErrorMessages(
+    private static List<String> convertExceptionsToErrorMessages(
             final List<Exception> exceptionList) {
         
         final List<String> errorMessageList = 

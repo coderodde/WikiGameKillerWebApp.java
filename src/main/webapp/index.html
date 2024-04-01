@@ -48,7 +48,10 @@
         </style>
         
         <script>
-            function constructWebSocket() {
+            let socket;
+            const socketUrl = constructWebSocketUrl();
+            
+            function constructWebSocketUrl() {
                 const host = document.location.host;
                 const path = document.location.pathname;
                 const webSocketUrl = `ws://${host}${path}search`;
@@ -57,7 +60,12 @@
                 console.log(`Path: ${path}`);
                 console.log(`WebSocket URL: ${webSocketUrl}`);
                 
-                const socket = new WebSocket(webSocketUrl);
+                return webSocketUrl;
+            }
+            
+            function constructWebSocket() {
+                
+                socket = new WebSocket(constructWebSocketUrl());
                 
                 socket.onopen = (event) => {
                     console.log("onopen. Event: ", event);
@@ -89,6 +97,8 @@
             }
             
             function spawnSearch() {
+                socket = constructWebSocket();
+                
                 const searchObject = {
                     "action":              "search",
                     "sourceUrl":           document.getElementById("sourceUrlInput")        .value,
@@ -105,16 +115,22 @@
                 console.log("json: ", json);
                 
                 let webSocket = constructWebSocket();
+                sendData(json);
+            }
+            
+            function sendData(json) {
+                let iterations = 0;
                 
-                function sendData() {
+                function sendDataImpl() {
                     if (webSocket.readyState) {    
                         webSocket.send(json);
                     } else {
-                        setTimeout(sendData, 100);
+                        setTimeout(sendDataImpl, 100);
+                        iterations++;
                     }
                 }
                 
-                sendData(json);
+                console.log(`${iterations} before successfully sending data.`);
             }
             
             function wikipediaUrlIsValid(url) {
@@ -142,6 +158,20 @@
                 } else {
                     alert("shit");
                 }
+            }
+            
+            function halt() {
+                if (webSocket === null) {
+                    console.log(`Cannot halt. Socket is closed.`);
+                    return;
+                }
+                
+                const requestObject = {
+                    "action":"halt"
+                };
+                
+                sendData(JSON.stringify(requestObject));
+                webSocket = null;
             }
         </script>
     </head>
@@ -225,7 +255,7 @@
             </form>
             <button id="doSearch" onclick="spawnSearch();">Search</button> 
             <button id="setDefaultsButton" onclick="resetParametersToDefaults();">Set default parameters</button>
-            <button id="haltButton" disabled>Halt</button>
+            <button id="haltButton" onclick="halt();">Halt</button>
         </div>
         
         <div id="result-div">
