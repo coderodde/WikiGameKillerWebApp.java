@@ -11,11 +11,12 @@ public final class MessageDecoder implements Decoder.Text<Message> {
     private static final Gson GSON = new Gson();
     
     public Message decode(final String string) throws DecodeException {
-        return GSON.fromJson(string, Message.class);
+        final Message message = GSON.fromJson(string, Message.class);
+        return message;
     }
 
     public boolean willDecode(final String string) {
-        return true;
+        return string != null;
     }
 
     public void init(EndpointConfig ec) {

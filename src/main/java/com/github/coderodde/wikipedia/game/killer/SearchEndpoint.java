@@ -100,17 +100,17 @@ public final class SearchEndpoint {
     @OnMessage
     public void onMessage(final Session session, 
                           final Message incomingMessage) 
-            throws IOException, DecodeException, EncodeException {
+            throws IOException, EncodeException {
         System.out.println("yeas");
         final SearchThread searchThread = SESSION_TO_THRED_MAP.get(session);
-        final String action = incomingMessage.getAction();
+        final String action = incomingMessage.action;
         
         switch (action) {
             case Message.HALT_ACTION:
                 if (searchThread == null) {
                     final Message message = new Message();
-                    message.setStatus("error");
-                    message.getErrorMessages().add(
+                    message.status = "error";
+                    message.errorMessages.add(
                             "Trying to halt a search process that does not" + 
                             " exist. Please stop hacking.");
                     
@@ -119,19 +119,18 @@ public final class SearchEndpoint {
                     searchThread.finder.halt();
                     final Message message = new Message();
                     
-                    message.setStatus("success");
+                    message.status = "success";
                     message.searchParameters = new Message.SearchParameters();
-                    message.searchParameters
-                           .setSourceUrl(
-                                   incomingMessage
-                                           .searchParameters
-                                           .getSourceUrl());
+                    message.searchParameters.sourceUrl =
+                            incomingMessage
+                            .searchParameters
+                            .sourceUrl;
                     
-                    message.getErrorMessages().add(
+                    message.infoMessages.add(
                         String.format(
                             "Successfully halted the search from \"%s\" to \"%s\".", 
-                            incomingMessage.searchParameters.getSourceUrl(),
-                            incomingMessage.searchParameters.getTargetUrl()));
+                            incomingMessage.searchParameters.sourceUrl,
+                            incomingMessage.searchParameters.targetUrl));
                     
                     session.getBasicRemote().sendText(GSON.toJson(message));
                 }
@@ -143,8 +142,8 @@ public final class SearchEndpoint {
                     
                 } else {
                     final Message message = new Message();
-                    message.setStatus("error");
-                    message.getErrorMessages()
+                    message.status = "error";
+                    message.errorMessages
                            .add("Cannot run a new search while the previous did not finish.");
                     
                     session.getBasicRemote().sendText(GSON.toJson(message));
@@ -232,8 +231,8 @@ public final class SearchEndpoint {
             
             this.session = session;
             
-            final String sourceUrl = message.searchParameters.getSourceUrl().trim();
-            final String targetUrl = message.searchParameters.getTargetUrl().trim();
+            final String sourceUrl = message.searchParameters.sourceUrl.trim();
+            final String targetUrl = message.searchParameters.targetUrl.trim();
             final List<Exception> exceptionList = new ArrayList<>();
             
             try {
@@ -271,7 +270,7 @@ public final class SearchEndpoint {
             }
             
             if (sourceArticleValid == false) {
-                responseMessage.getErrorMessages().add(
+                responseMessage.errorMessages.add(
                         String.format(
                             "The source article \"%s\" was rejected by " + 
                             "Wikipedia API.", 
@@ -287,7 +286,7 @@ public final class SearchEndpoint {
             }
             
             if (targetArticleValid == false) {
-                responseMessage.getErrorMessages().add(
+                responseMessage.errorMessages.add(
                         String.format(
                             "The target article \"%s\" was rejected by " + 
                                 "Wikipedia API.", 
@@ -295,7 +294,7 @@ public final class SearchEndpoint {
             }
             
             if (sourceUrl.equals(targetUrl)) {
-                responseMessage.getErrorMessages().add(
+                responseMessage.errorMessages.add(
                         String.format(
                             "The source and target article URLs are same: "
                             + "\"%s\".", 
@@ -303,7 +302,7 @@ public final class SearchEndpoint {
             }
             
             if (!sourceLanguageCode.equals(targetLanguageCode)) {
-                responseMessage.getErrorMessages().add(
+                responseMessage.errorMessages.add(
                         String.format(
                             "Different language codes: \"%s\" vs \"%s\".", 
                             sourceLanguageCode,
@@ -311,13 +310,13 @@ public final class SearchEndpoint {
             }
             
             if (sourceTitle.equals(targetTitle)) {
-                responseMessage.getErrorMessages().add(
+                responseMessage.errorMessages.add(
                         "The source article URL and the target article URL " + 
                                 "are the same.");
             }
             
-            if (!responseMessage.getErrorMessages().isEmpty()) {
-                responseMessage.setStatus("error");
+            if (!responseMessage.errorMessages.isEmpty()) {
+                responseMessage.status = "error";
                 session.getBasicRemote().sendText(GSON.toJson(responseMessage));
                 return;
             }
@@ -325,12 +324,12 @@ public final class SearchEndpoint {
             this.finder = 
                 ThreadPoolBidirectionalBFSPathFinderBuilder.
                     <String>begin()
-                    .withNumberOfMasterTrials            (message.searchParameters.getNumberOfThreads())
-                    .withJoinDurationMillis              (message.searchParameters.getExpansionDuration())
-                    .withLockWaitMillis                  (message.searchParameters.getWaitTimeout())
-                    .withNumberOfMasterTrials            (message.searchParameters.getMasterTrials())
-                    .withMasterThreadSleepDurationMillis (message.searchParameters.getMasterSleepDuration())
-                    .withSlaveThreadSleepDurationMillis  (message.searchParameters.getSlaveSleepDuration())
+                    .withNumberOfMasterTrials            (message.searchParameters.numberOfThreads)
+                    .withJoinDurationMillis              (message.searchParameters.expansionDuration)
+                    .withLockWaitMillis                  (message.searchParameters.waitTimeout)
+                    .withNumberOfMasterTrials            (message.searchParameters.masterTrials)
+                    .withMasterThreadSleepDurationMillis (message.searchParameters.masterSleepDuration)
+                    .withSlaveThreadSleepDurationMillis  (message.searchParameters.slaveSleepDuration)
                     .end();
         }
         

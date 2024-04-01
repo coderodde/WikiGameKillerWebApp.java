@@ -117,25 +117,20 @@
                 };
                 
                 const json = JSON.stringify(searchObject);
+                const webSocket = constructWebSocket();
+                
                 console.log("json: ", json);
+                console.log("webSocket:", webSocket);
                 
-                let webSocket = constructWebSocket();
-                sendData(webSocket, json);
-            }
-            
-            function sendData(webSocket, json) {
-                let iterations = 0;
-                
-                function sendDataImpl() {
-                    if (webSocket.readyState) {    
-                        webSocket.send(json);
+                function sendData(ws, json) {
+                    if (ws.readyState) {
+                        ws.send(json);
                     } else {
-                        setTimeout(sendDataImpl, 100);
-                        iterations++;
+                        setTimeout(function() {sendData(ws, json)}, 100);
                     }
-                }
+                }   
                 
-                console.log(`${iterations} iterations before successfully sending data.`);
+                sendData(webSocket, json);
             }
             
             function wikipediaUrlIsValid(url) {
