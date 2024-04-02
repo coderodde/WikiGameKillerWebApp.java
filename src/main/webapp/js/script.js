@@ -1,10 +1,9 @@
 let socket;
-const socketUrl = constructWebSocketUrl();
 
-function constructWebSocketUrl() {
+function constructWebSocketUrl(endpoint) {
     const host = document.location.host;
     const path = document.location.pathname;
-    const webSocketUrl = `ws://${host}${path}search`;
+    const webSocketUrl = `ws://${host}${path}${endpoint}`;
 
     console.log(`Host: ${host}`);
     console.log(`Path: ${path}`);
@@ -13,9 +12,9 @@ function constructWebSocketUrl() {
     return webSocketUrl;
 }
 
-function constructWebSocket() {
+function constructWebSocket(endpoint) {
 
-    socket = new WebSocket(constructWebSocketUrl());
+    socket = new WebSocket(constructWebSocketUrl(endpoint));
 
     socket.onopen = (event) => {
         console.log("onopen. Event: ", event);
@@ -35,9 +34,9 @@ function constructWebSocket() {
             logInfo(`[STATISTICS] Duration: ${obj["duration"]} milliseconds.`);
             logInfo(`[STATISTICS] Number of expanded nodes: ${obj["numberOfExpandedNodes"]}.`)
             logLinkPath(obj["urlPath"], obj["languageCode"]);
+        } else if (obj["status"] === "getRandomArticles") {
+            console.log("hello rnadom");
         }
-        
-        console.log(`Received text: ${text}.`);
     };
 
     socket.onclose = (event) => {
@@ -50,7 +49,6 @@ function constructWebSocket() {
 
     return socket;
 }
-;
 
 function resetParametersToDefaults() {
     document.getElementById("threadsInput")          .value = "256";
@@ -80,7 +78,7 @@ function spawnSearch() {
         return;
     }
 
-    socket = constructWebSocket();
+    socket = constructWebSocket("search");
 
     const searchObject = {
         "action": "search",
@@ -100,12 +98,12 @@ function spawnSearch() {
     };
 
     const json = JSON.stringify(searchObject);
-    const webSocket = constructWebSocket();
 
     console.log("json: ", json);
-    console.log("webSocket:", webSocket);
+    console.log("socket:", socket);
 
-    sendData(webSocket, json);
+    sendData(socket, json);
+    socket = null;
 }
 
 function wikipediaUrlIsValid(url) {
@@ -219,19 +217,39 @@ function logLinkPath(links, languageCode) {
     document.getElementById("log").appendChild(table);
 }
 
+function glueUrl(title) {
+    title = encodeURI(title);
+    title = title.replaceAll("%20", "_");
+    return `https://en.wikipedia.org/wiki/${title}`;
+}
+
 function getRandomArticles() {
-    const xhr = new XMLHttpRequest();
-    xhr.open("GET", "https://www.mediawiki.org/w/api.php?action=query&list=random&rnnamespace=0&rnlimit=2&format=json");
-    
-    xhr.setRequestHeader("Access-Control-Allow-Headers", 
-                         "Access-Control-Allow-Origin");
-                         
-    xhr.setRequestHeader("Access-Control-Allow-Origin", "*");
-    xhr.onreadystatechange = () => {
-        if (xhr.readyState == 4 && xhr.status == 200) {
-            console.log("data:", xhr.response);
-        }
+    const socket = constructWebSocket("randomize");
+    socket.onmessage = function(event) {
+        const obj = JSON.parse(event.data);
+        console.log("Random articles: ", obj);
+        const title1 = obj["query"]["random"][0]["title"];
+        const title2 = obj["query"]["random"][1]["title"];
+        
+        document.getElementById("sourceUrlInput").value = glueUrl(title1);
+        document.getElementById("targetUrlInput").value = glueUrl(title2);
     };
+
+    sendData(socket, "");
     
-    xhr.send();
+//    const xhr = new XMLHttpRequest();
+//    const origin = `${document.location.host}/${document.location.pathname}/search`;
+//    xhr.open("GET", `https://www.mediawiki.org/w/api.php?action=query&list=random&origin=${origin}&grnnamespace=0&grnlimit=2&format=json`);
+//    
+////    xhr.setRequestHeader("Access-Control-Allow-Headers", 
+////                         "Access-Control-Allow-Origin");
+////    xhr.setRequestHeader("Access-Control-Allow-Origin", "*");
+//    
+//    xhr.onreadystatechange = () => {
+//        if (xhr.readyState == 4 && xhr.status == 200) {
+//            console.log("data:", xhr.response);
+//        }
+//    };
+//    
+//    xhr.send();
 }

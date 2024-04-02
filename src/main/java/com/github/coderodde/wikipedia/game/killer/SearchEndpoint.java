@@ -359,15 +359,18 @@ public final class SearchEndpoint {
                 return;
             }
             
+            final Message.SearchParameters searchParameters = 
+                    message.searchParameters;
+            
             this.finder = 
                 ThreadPoolBidirectionalBFSPathFinderBuilder.
                     <String>begin()
-                    .withNumberOfRequestedThreads        (message.searchParameters.numberOfThreads)
-                    .withExpansionDurationMillis         (message.searchParameters.expansionDuration)
-                    .withLockWaitMillis                  (message.searchParameters.waitTimeout)
-                    .withNumberOfMasterTrials            (message.searchParameters.masterTrials)
-                    .withMasterThreadSleepDurationMillis (message.searchParameters.masterSleepDuration)
-                    .withSlaveThreadSleepDurationMillis  (message.searchParameters.slaveSleepDuration)
+                    .withNumberOfRequestedThreads        (searchParameters.numberOfThreads)
+                    .withJoinDurationMillis              (searchParameters.expansionDuration)
+                    .withLockWaitMillis                  (searchParameters.waitTimeout)
+                    .withNumberOfMasterTrials            (searchParameters.masterTrials)
+                    .withMasterThreadSleepDurationMillis (searchParameters.masterSleepDuration)
+                    .withSlaveThreadSleepDurationMillis  (searchParameters.slaveSleepDuration)
                     .end();
             
             isCorrect = true;
