@@ -23,6 +23,17 @@ function constructWebSocket() {
 
     socket.onmessage = (event) => {
         const text = event.data;
+        const obj = JSON.parse(text);
+        
+        if (obj["status"] === "error") {
+            const errorMessages = obj["errorMessages"];
+            
+            for (let index in errorMessages) {
+                logError(errorMessages[index]);
+            }
+        } else {
+            
+        }
         console.log(`Received text: ${text}.`);
     };
 
@@ -157,7 +168,7 @@ function logError(str) {
     p.className = "logErrorClass";
     document.getElementById("log").appendChild(p);
 }
-
-            logError("Error 1");
-            logInfo("Info");
-            logError("Error 2");
+//
+//            logError("Error 1");
+//            logInfo("Info");
+//            logError("Error 2");

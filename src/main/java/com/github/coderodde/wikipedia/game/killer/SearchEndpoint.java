@@ -168,9 +168,11 @@ public final class SearchEndpoint {
                             new SearchThread(session,
                                              incomingMessage);
                     
-                    SESSION_TO_THRED_MAP.put(session, thread);
-                    
-                    thread.start();
+                    if (thread.isCorrect()) {
+                        SESSION_TO_THRED_MAP.put(session, thread);
+
+                        thread.start();
+                    }
                 } else {
                     final Message message = new Message();
                     message.status = "error";
@@ -253,6 +255,7 @@ public final class SearchEndpoint {
     }
     
     private static final class SearchThread extends Thread {
+        private boolean isCorrect = false;
         private final Session session;
         private ThreadPoolBidirectionalBFSPathFinder<String> finder;
         private AbstractNodeExpander<String> forwardNodeExpander;
@@ -287,6 +290,7 @@ public final class SearchEndpoint {
             if (!exceptionList.isEmpty()) {
                 responseMessage.status = "error";
                 responseMessage.errorMessages = toErrorMessages(exceptionList);
+                session.getBasicRemote().sendText(GSON.toJson(responseMessage));
                 return;
             }
             
@@ -330,7 +334,7 @@ public final class SearchEndpoint {
                 responseMessage.errorMessages.add(
                         String.format(
                             "The target article \"%s\" was rejected by " + 
-                                "Wikipedia API.", 
+                            "Wikipedia API.", 
                             targetUrl));
             }
             
@@ -367,6 +371,8 @@ public final class SearchEndpoint {
                     .withMasterThreadSleepDurationMillis (message.searchParameters.masterSleepDuration)
                     .withSlaveThreadSleepDurationMillis  (message.searchParameters.slaveSleepDuration)
                     .end();
+            
+            isCorrect = true;
         }
         
         @Override
@@ -398,6 +404,10 @@ public final class SearchEndpoint {
                         "Could not send existing path: {0}.", 
                         path.toString());
             }
+        }
+        
+        boolean isCorrect() {
+            return isCorrect;
         }
     }
     
