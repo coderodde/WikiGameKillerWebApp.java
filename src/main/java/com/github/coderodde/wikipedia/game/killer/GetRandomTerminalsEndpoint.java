@@ -18,8 +18,6 @@ public final class GetRandomTerminalsEndpoint {
     private static final Logger LOGGER = 
             Logger.getLogger(GetRandomTerminalsEndpoint.class.getName());
     
-//    https://www.mediawiki.org/w/api.php?action=query&format=json&list=random&formatversion=2&rnnamespace=0&rnlimit=2
-    
     private static final String API_URL = 
             "https://en.wikipedia.org/w/api.php?" + 
             "action=query&list=random&rnnamespace=0&rnlimit=2&format=json&utf8=1";
@@ -32,19 +30,16 @@ public final class GetRandomTerminalsEndpoint {
         final String uri = String.format(API_URL, languageCode);
         
         try {
-            final String json = IOUtils.toString(new URI(uri), Charset.forName("utf-8"));
+            final String json = 
+                    IOUtils.toString(new URI(uri), Charset.forName("utf-8"));
+            
             session.getBasicRemote().sendText(json);
-        } catch (URISyntaxException ex) {
+        } catch (URISyntaxException | IOException ex) {
             LOGGER.log(
                     Level.SEVERE,
                     "Could not download JSON: {0}.", 
                     ex.getMessage());
             
-        } catch (IOException ex) {
-            LOGGER.log(
-                    Level.SEVERE, 
-                    "Could not download JSON: {0}.", 
-                    ex.getMessage());
         }
     }
 }

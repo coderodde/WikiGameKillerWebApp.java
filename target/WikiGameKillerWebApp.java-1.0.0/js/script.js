@@ -155,11 +155,11 @@ function clearLog() {
 }
 
 function logInfo(str) {
-    const p = document.createElement("p");
+    const div = document.createElement("div");
     const text = document.createTextNode(str);
-    p.appendChild(text);
-    p.className = "logInfoClass";
-    document.getElementById("log").appendChild(p);
+    div.appendChild(text);
+    div.className = "logInfoClass";
+    document.getElementById("log").appendChild(div);
 }
 
 function logError(str) {
