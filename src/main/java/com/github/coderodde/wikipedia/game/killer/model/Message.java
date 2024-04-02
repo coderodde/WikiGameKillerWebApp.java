@@ -13,6 +13,9 @@ public final class Message {
     public String action;
     public SearchParameters searchParameters;
     public List<String> urlPath;
+    public long duration;
+    public int numberOfExpandedNodes;
+    public String languageCode;
     public List<String> errorMessages = new ArrayList<>();
     public List<String> infoMessages  = new ArrayList<>();
 

@@ -31,9 +31,12 @@ function constructWebSocket() {
             for (let index in errorMessages) {
                 logError(errorMessages[index]);
             }
-        } else {
-            
+        } else if (obj["status"] === "solutionFound") {
+            logInfo(`[STATISTICS] Duration: ${obj["duration"]} milliseconds.`);
+            logInfo(`[STATISTICS] Number of expanded nodes: ${obj["numberOfExpandedNodes"]}.`)
+            logLinkPath(obj["urlPath"], obj["languageCode"]);
         }
+        
         console.log(`Received text: ${text}.`);
     };
 
@@ -202,7 +205,7 @@ function createLink(lineNumber, link) {
     return tr;
 }
 
-function logLinkPath(links) {
+function logLinkPath(links, languageCode) {
     const table = document.createElement("table");
     let lineNumber = 1;
     
@@ -210,11 +213,9 @@ function logLinkPath(links) {
         table.appendChild(
                 createLink(
                     lineNumber++,
-                    `https://${links[index]}`));
+                    `https://${languageCode}.wikipedia.org/wiki/${links[index]}`));
     }
     
     document.getElementById("log").appendChild(table);
 }
 
-logLinkPath(["en.wikipedia.org/wiki/Audi", 
-             "ru.wikipedia.org/wiki/Василевка_(Болградский_район)"]);

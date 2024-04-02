@@ -66,6 +66,12 @@ body {
     padding-left: 2px;
 }
 
+tr {
+    border-spacing: 1px;
+    margin: 0px;
+    padding: 0px;
+}
+
 #log {
     border-width: 2px;
     border-color: black;

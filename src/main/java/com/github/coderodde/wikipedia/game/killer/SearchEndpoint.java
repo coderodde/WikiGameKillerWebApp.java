@@ -390,9 +390,22 @@ public final class SearchEndpoint {
                     .withBackwardNodeExpander(backwardNodeExpander)
                     .search();
             
+            LOGGER.log(
+                    Level.INFO, 
+                    "Found a path from \"{0}\" to \"{1}\": {2}.", 
+                    new Object[]{
+                        sourceTitle, 
+                        targetTitle, 
+                        path 
+                    });
+            
             final Message responseMessage = new Message();
             responseMessage.status = "solutionFound";
             responseMessage.urlPath = path;
+            responseMessage.languageCode = sourceLanguageCode;
+            responseMessage.duration = finder.getDuration();
+            responseMessage.numberOfExpandedNodes =
+                    finder.getNumberOfExpandedNodes();
             
             try {
                 session.getBasicRemote().sendText(GSON.toJson(responseMessage));
