@@ -168,3 +168,53 @@ function logError(str) {
     div.className = "logErrorClass";
     document.getElementById("log").appendChild(div);
 }
+
+function logLink(link) {
+    const div = document.createElement("div");
+    const text = document.createTextNode(link);
+    div.appendChild(text);
+    div.className = "logLinkClass";
+    document.getElementById("log").appendChild(div);
+}
+
+function getTitle(link) {
+    return decodeURI(link.substring(link.lastIndexOf("/") + 1));
+}
+
+function createLink(lineNumber, link) {
+    const tr           = document.createElement("tr");
+    const tdLineNumber = document.createElement("td");
+    const tdLink       = document.createElement("td");
+    const tdTitle      = document.createElement("td");
+    const a            = document.createElement("a");
+    const title        = getTitle(link);
+    
+    tdLineNumber.innerHTML = `${lineNumber}.`;
+    a.href = link;
+    a.innerHTML = link;
+    tdLink.appendChild(a);
+    tdTitle.innerHTML = title;
+    
+    tr.appendChild(tdLineNumber);
+    tr.appendChild(tdLink);
+    tr.appendChild(tdTitle);
+    
+    return tr;
+}
+
+function logLinkPath(links) {
+    const table = document.createElement("table");
+    let lineNumber = 1;
+    
+    for (let index in links) {
+        table.appendChild(
+                createLink(
+                    lineNumber++,
+                    `https://${links[index]}`));
+    }
+    
+    document.getElementById("log").appendChild(table);
+}
+
+logLinkPath(["en.wikipedia.org/wiki/Audi", 
+             "ru.wikipedia.org/wiki/Василевка_(Болградский_район)"]);

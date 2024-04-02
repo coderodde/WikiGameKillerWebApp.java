@@ -47,6 +47,9 @@ body {
 
 .logInfoClass {
     color: black;
+    padding-top: -1px;
+    padding-bottom: -1px;
+    padding-left: 2px;
 }
 
 .logErrorClass {
@@ -56,3 +59,16 @@ body {
     padding-left: 2px;
 }
 
+.logLinkClass {
+    color: #4287f5;
+    padding-top: -1px;
+    padding-bottom: -1px;
+    padding-left: 2px;
+}
+
+#log {
+    border-width: 2px;
+    border-color: black;
+    border-style: solid;
+    border-spacing: 10px;
+}
