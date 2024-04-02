@@ -362,8 +362,8 @@ public final class SearchEndpoint {
             this.finder = 
                 ThreadPoolBidirectionalBFSPathFinderBuilder.
                     <String>begin()
-                    .withNumberOfMasterTrials            (message.searchParameters.numberOfThreads)
-                    .withJoinDurationMillis              (message.searchParameters.expansionDuration)
+                    .withNumberOfRequestedThreads        (message.searchParameters.numberOfThreads)
+                    .withExpansionDurationMillis         (message.searchParameters.expansionDuration)
                     .withLockWaitMillis                  (message.searchParameters.waitTimeout)
                     .withNumberOfMasterTrials            (message.searchParameters.masterTrials)
                     .withMasterThreadSleepDurationMillis (message.searchParameters.masterSleepDuration)
@@ -375,11 +375,18 @@ public final class SearchEndpoint {
         
         @Override
         public void run() {
-            if (finder == null) {
+            if (finder == null  ) {
                 // Once here, parameters are invalid and no search should 
                 // happen:
                 return;
             }
+            
+            System.out.println(finder.getExpansionJoinDurationMillis());
+            System.out.println(finder.getLockWaitDurationMillis());
+            System.out.println(finder.getMasterThreadSleepDurationMillis());
+            System.out.println(finder.getMasterThreadTrials());
+            System.out.println(finder.getNumberOfThreads());
+            System.out.println(finder.getSlaveThreadSleepDurationMillis());
             
             final List<String> path = 
                     ThreadPoolBidirectionalBFSPathFinderSearchBuilder
