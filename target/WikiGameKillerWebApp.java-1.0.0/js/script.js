@@ -219,3 +219,19 @@ function logLinkPath(links, languageCode) {
     document.getElementById("log").appendChild(table);
 }
 
+function getRandomArticles() {
+    const xhr = new XMLHttpRequest();
+    xhr.open("GET", "https://www.mediawiki.org/w/api.php?action=query&list=random&rnnamespace=0&rnlimit=2&format=json");
+    
+    xhr.setRequestHeader("Access-Control-Allow-Headers", 
+                         "Access-Control-Allow-Origin");
+                         
+    xhr.setRequestHeader("Access-Control-Allow-Origin", "*");
+    xhr.onreadystatechange = () => {
+        if (xhr.readyState == 4 && xhr.status == 200) {
+            console.log("data:", xhr.response);
+        }
+    };
+    
+    xhr.send();
+}
