@@ -162,13 +162,9 @@ function logInfo(str) {
 }
 
 function logError(str) {
-    const p = document.createElement("p");
+    const div = document.createElement("div");
     const text = document.createTextNode(str);
-    p.appendChild(text);
-    p.className = "logErrorClass";
-    document.getElementById("log").appendChild(p);
+    div.appendChild(text);
+    div.className = "logErrorClass";
+    document.getElementById("log").appendChild(div);
 }
-//
-//            logError("Error 1");
-//            logInfo("Info");
-//            logError("Error 2");

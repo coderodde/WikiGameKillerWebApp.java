@@ -19,7 +19,6 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import java.util.regex.Pattern;
-import javax.websocket.DecodeException;
 import javax.websocket.EncodeException;
 import javax.websocket.OnClose;
 import javax.websocket.OnError;
@@ -356,7 +355,6 @@ public final class SearchEndpoint {
             
             if (!responseMessage.errorMessages.isEmpty()) {
                 responseMessage.status = "error";
-                responseMessage.errorMessages = toErrorMessages(exceptionList);
                 session.getBasicRemote().sendText(GSON.toJson(responseMessage));
                 return;
             }

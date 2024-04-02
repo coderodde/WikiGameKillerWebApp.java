@@ -51,5 +51,8 @@ body {
 
 .logErrorClass {
     color: #C01B00;
+    padding-top: -1px;
+    padding-bottom: -1px;
+    padding-left: 2px;
 }
 
