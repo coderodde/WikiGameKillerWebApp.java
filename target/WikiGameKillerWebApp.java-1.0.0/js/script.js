@@ -1,4 +1,22 @@
 let socket;
+let searchSocket;
+let randomizeSocket;
+
+let oldValidThreadsInput           = "256";
+let oldValidExpansionDurationInput = "4000";
+let oldValidWaitTimeoutInput       = "1";
+let oldValidTrialsInput            = "2000";
+let oldValidMasterSleepInput       = "1";
+let oldValidSlaveSleepInput        = "1";
+
+const inputState = {
+     "threadsInput":            "256" ,
+     "expansionDurationInput":  "4000",
+     "waitTimeoutInput":        "1"   ,
+     "trialsInput":             "2000",
+     "masterSleepInput":        "1"   ,
+     "slaveSleepInput":         "1"   
+};
 
 function constructWebSocketUrl(endpoint) {
     const host = document.location.host;
@@ -53,10 +71,88 @@ function constructWebSocket(endpoint) {
 function resetParametersToDefaults() {
     document.getElementById("threadsInput")          .value = "256";
     document.getElementById("expansionDurationInput").value = "4000";
-    document.getElementById("waitTimeoutInput")      .value = "2";
-    document.getElementById("trialsInput")           .value = "200";
-    document.getElementById("masterSleepInput")      .value = "15";
+    document.getElementById("waitTimeoutInput")      .value = "1";
+    document.getElementById("trialsInput")           .value = "2000";
+    document.getElementById("masterSleepInput")      .value = "1";
     document.getElementById("slaveSleepInput")       .value = "1";
+    
+//    oldValueThreadsInput           = "256";
+//    oldValueExpansionDurationInput = "4000";
+//    oldValueWaitTimeoutInput       = "1";
+//    oldValueTrialsInput            = "2000";
+//    oldValueMasterSleepInput       = "1";
+//    oldValueSlaveSleepInput        = "1";
+    
+    inputState = {
+        "threadsInput":            "256" ,
+        "expansionDurationInput":  "4000",
+        "waitTimeoutInput":        "1"   ,
+        "trialsInput":             "2000",
+        "masterSleepInput":        "1"   ,
+        "slaveSleepInput":         "1"   
+    };
+}
+
+function isPositiveNumber(str) {
+    str = str.trim();
+    
+    if (str.startsWith("0")) {
+        return false;
+    }
+    
+    if (!/^\d+/.test(str)) {
+        return false;
+    }
+    
+    const number = Number(str);
+    return number > 0;
+}
+
+function getValue(str, oldValid) {
+    if (str === "") {
+        return "";
+    }
+    
+    if (str.includes("e") || str.includes("E")) {
+        return oldValid;
+    }
+    
+    if (/^\d+$/.test(str) && Number(str) > 0) {
+        return str;
+    }
+    
+    return oldValid;
+}
+
+const inputMap = {
+    "threadsInput":           document.getElementById("threadsInput"),
+    "expansionDurationInput": document.getElementById("expansionDurationInput"),
+    "waitTimeoutInput":       document.getElementById("waitTimeoutInput"),
+    "trialsInput":            document.getElementById("trialsInput"),
+    "masterSleepInput":       document.getElementById("masterSleepInput"),
+    "slaveSleepInput":        document.getElementById("slaveSleepInput")
+}
+
+function tryUpdateNumericInputValue(inputId) {
+    const element = document.getElementById(inputId);
+    const newValue = element.value.trim();
+    const nextValue = getValue(newValue, 
+                               inputState[inputId]);
+    
+    if (nextValue === "") {
+        // Show place holder:
+        inputMap[inputId].value = "";
+        return;
+    }
+    
+    const number = Number(nextValue);
+    
+    if (number > 0) {
+        element.value = nextValue;
+        inputState[inputId] = nextValue;
+    } else {
+        element.value = inputState[inputId]
+    }
 }
 
 function sendData(ws, json) {
