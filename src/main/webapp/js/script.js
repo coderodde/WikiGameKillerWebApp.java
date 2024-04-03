@@ -335,8 +335,29 @@ function validateInputForm() {
         if (sourceLanguageCode !== targetLanguageCode) {
             sourceUrlInput.className = "paramInputError";
             targetUrlInput.className = "paramInputError";
+            setMessageBox(
+                    `Language mismatch: \"
+                    ${sourceLanguageCode}
+                    \" vs \"
+                    ${targetLanguageCode}
+                    \".`);
         }
+    } else if (sourcePass) {
+        setMessageBox(`Invalid target URL: ${targetUrlInput.value}`);
+    } else if (targetPass) {
+        setMessageBox(`Invalid source URL: ${sourceUrlInput.value}`);
+    } else {
+        setMessageBox(`Both URLs (${sourceUrlInput.value}) and (${targetUrlInput.value}) are invalid.`);
     }
+}
+
+function setMessageBox(str) {
+    const messageBox = document.getElementById("message-box");
+    messageBox.innerHTML = str;
+}
+
+function clearMessageBox() {
+    setMessageBox("");
 }
 
 validateInputForm();
