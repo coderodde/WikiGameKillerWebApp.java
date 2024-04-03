@@ -290,6 +290,16 @@ function getRandomArticles() {
     sendData(socket, "");
 }
 
+function getLanguageCode(url) {
+    if (url.startsWith("https://")) {
+        url = url.substring("https://".length);
+    } else if (url.startsWith("http://")) {
+        url = url.substring("http://").length;
+    }
+    
+    return url.substring(0, 2);
+}
+
 function validateInputForm() {
     for (const inputName in inputMap) {
         const inputObject = inputMap[inputName];
@@ -303,17 +313,29 @@ function validateInputForm() {
     
     const sourceUrlInput = document.getElementById("sourceUrlInput");
     const targetUrlInput = document.getElementById("targetUrlInput");
+    let sourcePass;
+    let targetPass;
     
-    if (wikipediaUrlIsValid(sourceUrlInput.value)) {
+    if (sourcePass = wikipediaUrlIsValid(sourceUrlInput.value)) {
         sourceUrlInput.className = "paramInput";
     } else {
         sourceUrlInput.className = "paramInputError";
     }
     
-    if (wikipediaUrlIsValid(targetUrlInput.value)) {
+    if (targetPass = wikipediaUrlIsValid(targetUrlInput.value)) {
         targetUrlInput.className = "paramInput";
     } else {
         targetUrlInput.className = "paramInputError";
+    }
+    
+    if (sourcePass && targetPass) {
+        const sourceLanguageCode = getLanguageCode(sourceUrlInput.value);
+        const targetLanguageCode = getLanguageCode(targetUrlInput.value);
+        
+        if (sourceLanguageCode !== targetLanguageCode) {
+            sourceUrlInput.className = "paramInputError";
+            targetUrlInput.className = "paramInputError";
+        }
     }
 }
 

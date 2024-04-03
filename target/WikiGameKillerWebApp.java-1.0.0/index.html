@@ -16,7 +16,7 @@
                         <td><input type="text"
                                    id="sourceUrlInput"
                                    class="paramInput"
-                                   onchange="colorInputBorder(null);"
+                                   oninput="validateInputForm();"
                                    placeholder="Source article URL"/> </td>
                     </tr>
 
@@ -25,6 +25,7 @@
                         <td><input type="text"
                                    id="targetUrlInput"
                                    class="paramInput"
+                                   oninput="validateInputForm();"
                                    placeholder="Target article URL"/> </td>
                     </tr>
 
