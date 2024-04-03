@@ -2,13 +2,6 @@ let socket;
 let searchSocket;
 let randomizeSocket;
 
-let oldValidThreadsInput           = "256";
-let oldValidExpansionDurationInput = "4000";
-let oldValidWaitTimeoutInput       = "1";
-let oldValidTrialsInput            = "2000";
-let oldValidMasterSleepInput       = "1";
-let oldValidSlaveSleepInput        = "1";
-
 const inputState = {
      "threadsInput":            "256" ,
      "expansionDurationInput":  "4000",
@@ -76,13 +69,6 @@ function resetParametersToDefaults() {
     document.getElementById("masterSleepInput")      .value = "1";
     document.getElementById("slaveSleepInput")       .value = "1";
     
-//    oldValueThreadsInput           = "256";
-//    oldValueExpansionDurationInput = "4000";
-//    oldValueWaitTimeoutInput       = "1";
-//    oldValueTrialsInput            = "2000";
-//    oldValueMasterSleepInput       = "1";
-//    oldValueSlaveSleepInput        = "1";
-    
     inputState = {
         "threadsInput":            "256" ,
         "expansionDurationInput":  "4000",
@@ -91,21 +77,6 @@ function resetParametersToDefaults() {
         "masterSleepInput":        "1"   ,
         "slaveSleepInput":         "1"   
     };
-}
-
-function isPositiveNumber(str) {
-    str = str.trim();
-    
-    if (str.startsWith("0")) {
-        return false;
-    }
-    
-    if (!/^\d+/.test(str)) {
-        return false;
-    }
-    
-    const number = Number(str);
-    return number > 0;
 }
 
 function getValue(str, oldValid) {
@@ -142,6 +113,7 @@ function tryUpdateNumericInputValue(inputId) {
     if (nextValue === "") {
         // Show place holder:
         inputMap[inputId].value = "";
+        validateInputForm();
         return;
     }
     
@@ -153,6 +125,8 @@ function tryUpdateNumericInputValue(inputId) {
     } else {
         element.value = inputState[inputId]
     }
+    
+    validateInputForm();
 }
 
 function sendData(ws, json) {
@@ -166,6 +140,8 @@ function sendData(ws, json) {
 }
 
 function spawnSearch() {
+    validateInputForm();
+    
     if (socket) {
         console.log(
                 "Trying to spawn search while " +
@@ -206,27 +182,8 @@ function wikipediaUrlIsValid(url) {
     return /^(http(s)?:\/\/)?..\.wikipedia\.org\/wiki\/.+$/.test(url);
 }
 
-function isPositiveInteger(str) {
-    if (/^\d+$/.test(str)) {
-        return parseInt(str) > 0;
-    }
-
-    return false;
-}
-
 function colorInputBorder(elem) {
     document.getElementById("sourceUrlInput").style.borderColor = "red";
-}
-
-function onChangeThreads() {
-    const input = document.getElementById("threadsInput");
-    const currentValue = input.value;
-
-    if (isPositiveInteger(currentValue)) {
-        input.value = currentValue;
-    } else {
-        alert("shit");
-    }
 }
 
 function halt() {
@@ -323,7 +280,6 @@ function getRandomArticles() {
     const socket = constructWebSocket("randomize");
     socket.onmessage = function(event) {
         const obj = JSON.parse(event.data);
-        console.log("Random articles: ", obj);
         const title1 = obj["query"]["random"][0]["title"];
         const title2 = obj["query"]["random"][1]["title"];
         
@@ -332,20 +288,33 @@ function getRandomArticles() {
     };
 
     sendData(socket, "");
-    
-//    const xhr = new XMLHttpRequest();
-//    const origin = `${document.location.host}/${document.location.pathname}/search`;
-//    xhr.open("GET", `https://www.mediawiki.org/w/api.php?action=query&list=random&origin=${origin}&grnnamespace=0&grnlimit=2&format=json`);
-//    
-////    xhr.setRequestHeader("Access-Control-Allow-Headers", 
-////                         "Access-Control-Allow-Origin");
-////    xhr.setRequestHeader("Access-Control-Allow-Origin", "*");
-//    
-//    xhr.onreadystatechange = () => {
-//        if (xhr.readyState == 4 && xhr.status == 200) {
-//            console.log("data:", xhr.response);
-//        }
-//    };
-//    
-//    xhr.send();
 }
+
+function validateInputForm() {
+    for (const inputName in inputMap) {
+        const inputObject = inputMap[inputName];
+        
+        if (inputObject.value === "") {
+            inputObject.className = "paramInputError";
+        } else {
+            inputObject.className = "paramInput";
+        }
+    }
+    
+    const sourceUrlInput = document.getElementById("sourceUrlInput");
+    const targetUrlInput = document.getElementById("targetUrlInput");
+    
+    if (wikipediaUrlIsValid(sourceUrlInput.value)) {
+        sourceUrlInput.className = "paramInput";
+    } else {
+        sourceUrlInput.className = "paramInputError";
+    }
+    
+    if (wikipediaUrlIsValid(targetUrlInput.value)) {
+        targetUrlInput.className = "paramInput";
+    } else {
+        targetUrlInput.className = "paramInputError";
+    }
+}
+
+validateInputForm();
