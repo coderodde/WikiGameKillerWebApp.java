@@ -1,6 +1,7 @@
-let socket;
 let searchSocket;
 let randomizeSocket;
+let sourceUrl;
+let targetUrl;
 
 const inputState = {
      "threadsInput":            "256" ,
@@ -23,42 +24,43 @@ const inputNames = {
 function constructWebSocketUrl(endpoint) {
     const host = document.location.host;
     const path = document.location.pathname;
-    const webSocketUrl = `ws://${host}${path}${endpoint}`;
-
-    console.log(`Host: ${host}`);
-    console.log(`Path: ${path}`);
-    console.log(`WebSocket URL: ${webSocketUrl}`);
-
-    return webSocketUrl;
+    return `ws://${host}${path}${endpoint}`;
 }
 
-function constructWebSocket(endpoint) {
+function searchOnMessageCallback(event) {
+    const text = event.data;
+    const obj = JSON.parse(text);
 
-    socket = new WebSocket(constructWebSocketUrl(endpoint));
+    if (obj["status"] === "error") {
+        const errorMessages = obj["errorMessages"];
+
+        for (let index in errorMessages) {
+            logError(errorMessages[index]);
+        }
+    } else if (obj["status"] === "solutionFound") {
+        logInfo(`[STATISTICS] Duration: ${obj["duration"]} milliseconds.`);
+        logInfo(`[STATISTICS] Number of expanded nodes: ${obj["numberOfExpandedNodes"]}.`)
+        logLinkPath(obj["urlPath"], obj["languageCode"]);
+        setSearchReadyButtons();
+    } else if (obj["status"] === "halted") {
+        logError("[STATISTICS] Search halted.");
+        logError(`[STATISTICS] Duration: ${obj["duration"]} milliseconds.`);
+        logError(`[STATISTICS] Number of expanded nodes: ${obj["numberOfExpandedNodes"]}.`)
+    }
+
+    searchSocket.close();
+    searchSocket = null;
+}
+
+function constructWebSocket(endpoint, onMessageCallback) {
+
+    const socket = new WebSocket(constructWebSocketUrl(endpoint));
 
     socket.onopen = (event) => {
         console.log("onopen. Event: ", event);
     };
 
-    socket.onmessage = (event) => {
-        const text = event.data;
-        const obj = JSON.parse(text);
-        
-        if (obj["status"] === "error") {
-            const errorMessages = obj["errorMessages"];
-            
-            for (let index in errorMessages) {
-                logError(errorMessages[index]);
-            }
-        } else if (obj["status"] === "solutionFound") {
-            logInfo(`[STATISTICS] Duration: ${obj["duration"]} milliseconds.`);
-            logInfo(`[STATISTICS] Number of expanded nodes: ${obj["numberOfExpandedNodes"]}.`)
-            logLinkPath(obj["urlPath"], obj["languageCode"]);
-        } else if (obj["status"] === "getRandomArticles") {
-            console.log("hello rnadom");
-        }
-    };
-
+    socket.onmessage = onMessageCallback;
     socket.onclose = (event) => {
         console.log("onclose. Event: ", event);
     };
@@ -149,17 +151,21 @@ function sendData(ws, json) {
 }
 
 function spawnSearch() {
-    validateInputForm();
-    
-    if (socket) {
-        console.log(
+    if (searchSocket) {
+        setMessageBox(
                 "Trying to spawn search while " +
                 "the previous search process " +
                 "is still running.");
         return;
     }
+    
+    if (!validateInputForm()) {
+        setOnInvalidInputForm();
+        return;
+    }
 
-    socket = constructWebSocket("search");
+    setOnSearchButtons();
+    searchSocket = constructWebSocket("search", searchOnMessageCallback);
 
     const searchObject = {
         "action": "search",
@@ -177,14 +183,12 @@ function spawnSearch() {
         "errorMessages": [],
         "infoMessages": []
     };
+    
+    sourceUrl = document.getElementById("sourceUrlInput").value;
+    targetUrl = document.getElementById("targetUrlInput").value;
 
     const json = JSON.stringify(searchObject);
-
-    console.log("json: ", json);
-    console.log("socket:", socket);
-
-    sendData(socket, json);
-    socket = null;
+    sendData(searchSocket, json);
 }
 
 function wikipediaUrlIsValid(url) {
@@ -196,7 +200,7 @@ function colorInputBorder(elem) {
 }
 
 function halt() {
-    if (socket === null) {
+    if (searchSocket === null) {
         console.log("Cannot halt. Socket is closed.");
         return;
     } else {
@@ -204,12 +208,15 @@ function halt() {
     }
 
     const requestObject = {
-        "action": "halt"
+        "action": "halt",
+        "searchParameters": {
+            "sourceUrl": sourceUrl,
+            "targetUrl": targetUrl
+        }
     };
 
-    sendData(socket, JSON.stringify(requestObject));
-    socket.close();
-    socket = null;
+    sendData(searchSocket, JSON.stringify(requestObject));
+    setSearchReadyButtons();
 }
 
 function clearLog() {
@@ -309,6 +316,27 @@ function getLanguageCode(url) {
     return url.substring(0, 2);
 }
 
+function setSearchReadyButtons() {
+    document.getElementById("doSearchButton")         .disabled = false;
+    document.getElementById("setDefaultsButton")      .disabled = false;
+    document.getElementById("haltButton")             .disabled = true;
+    document.getElementById("getRandomArticlesButton").disabled = false;
+}
+
+function setOnSearchButtons() {
+    document.getElementById("doSearchButton")         .disabled = true;
+    document.getElementById("setDefaultsButton")      .disabled = true;
+    document.getElementById("haltButton")             .disabled = false;
+    document.getElementById("getRandomArticlesButton").disabled = true;
+}
+
+function setOnInvalidInputForm() {
+    document.getElementById("doSearchButton")         .disabled = true;
+    document.getElementById("setDefaultsButton")      .disabled = false;
+    document.getElementById("haltButton")             .disabled = true;
+    document.getElementById("getRandomArticlesButton").disabled = true;
+}
+
 function validateInputForm() {
     let emptyInputName = null;
     
@@ -327,6 +355,7 @@ function validateInputForm() {
     }
     
     if (emptyInputName) {
+        setOnInvalidInputForm();
         setMessageBox(`${inputNames[emptyInputName]} is empty.`);
     }
     
@@ -360,15 +389,30 @@ function validateInputForm() {
                     \" vs \"
                     ${targetLanguageCode}
                     \".`);
+            
+            setOnInvalidInputForm();
+            return false;
+        } else if (sourceUrlInput.value === targetUrlInput.value) {
+            setMessageBox(`Both source URL and target URL (${sourceUrlInput.value}) are the same.`);
+            setOnInvalidInputForm();
+            return false;
         } else if (!emptyInputName) {
+            setSearchReadyButtons();
             clearMessageBox();   
+            return true;
         }
     } else if (sourcePass) {
         setMessageBox(`Invalid target URL: \"${targetUrlInput.value}\".`);
+        setOnInvalidInputForm();
+        return false;
     } else if (targetPass) {
         setMessageBox(`Invalid source URL: \"${sourceUrlInput.value}\".`);
+        setOnInvalidInputForm();
+        return false;
     } else {
         setMessageBox(`Both source URL (${sourceUrlInput.value}) and target URL (${targetUrlInput.value}) are invalid.`);
+        setOnInvalidInputForm();
+        return false;
     }
 }
 

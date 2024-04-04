@@ -120,9 +120,22 @@ public final class SearchEndpoint {
                             "Halting while there is no current search process.");
                 } else {
                     searchThread.finder.halt();
+                    
+                    try {
+                        searchThread.join();
+                    } catch (final InterruptedException ex) {
+                        
+                    }
+                    
                     final Message message = new Message();
                     
-                    message.status = "success";
+                    message.status = "halted";
+                    message.duration = searchThread.finder.getDuration();
+                    message.numberOfExpandedNodes =
+                            searchThread
+                                    .finder
+                                    .getNumberOfExpandedNodes();
+                    
                     message.searchParameters = new Message.SearchParameters();
                     message.searchParameters.sourceUrl =
                             incomingMessage
@@ -410,12 +423,29 @@ public final class SearchEndpoint {
                     });
             
             final Message responseMessage = new Message();
-            responseMessage.status = "solutionFound";
-            responseMessage.urlPath = path;
-            responseMessage.languageCode = sourceLanguageCode;
-            responseMessage.duration = finder.getDuration();
-            responseMessage.numberOfExpandedNodes =
-                    finder.getNumberOfExpandedNodes();
+            
+            if (finder.wasHalted()) {
+                responseMessage.status = "halted";
+                responseMessage.duration = finder.getDuration();
+                responseMessage.numberOfExpandedNodes =
+                        finder.getNumberOfExpandedNodes();
+                
+                responseMessage.searchParameters = 
+                        new Message.SearchParameters();
+                
+                responseMessage.searchParameters.sourceUrl =
+                        buildUrl(sourceLanguageCode, sourceTitle);
+                
+                responseMessage.searchParameters.targetUrl = 
+                        buildUrl(targetLanguageCode, targetTitle);
+            } else {
+                responseMessage.status = "solutionFound";
+                responseMessage.urlPath = path;
+                responseMessage.languageCode = sourceLanguageCode;
+                responseMessage.duration = finder.getDuration();
+                responseMessage.numberOfExpandedNodes =
+                        finder.getNumberOfExpandedNodes();    
+            }
             
             try {
                 session.getBasicRemote().sendText(GSON.toJson(responseMessage));
