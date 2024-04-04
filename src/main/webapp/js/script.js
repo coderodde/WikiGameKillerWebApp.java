@@ -11,6 +11,15 @@ const inputState = {
      "slaveSleepInput":         "1"   
 };
 
+const inputNames = {
+     "threadsInput":            "Number of threads"         ,
+     "expansionDurationInput":  "Maximum expansion duration",
+     "waitTimeoutInput":        "Maximum mutex timeout"     ,
+     "trialsInput":             "Number of master trials"   ,
+     "masterSleepInput":        "Master sleep duration"     ,
+     "slaveSleepInput":         "Slave sleep duration"   
+};
+
 function constructWebSocketUrl(endpoint) {
     const host = document.location.host;
     const path = document.location.pathname;
@@ -301,14 +310,24 @@ function getLanguageCode(url) {
 }
 
 function validateInputForm() {
+    let emptyInputName = null;
+    
     for (const inputName in inputMap) {
         const inputObject = inputMap[inputName];
         
         if (inputObject.value === "") {
+            if (!emptyInputName) {
+                emptyInputName = inputName;
+            }
+            
             inputObject.className = "paramInputError";
         } else {
             inputObject.className = "paramInput";
         }
+    }
+    
+    if (emptyInputName) {
+        setMessageBox(`${inputNames[emptyInputName]} is empty.`);
     }
     
     const sourceUrlInput = document.getElementById("sourceUrlInput");
@@ -341,13 +360,15 @@ function validateInputForm() {
                     \" vs \"
                     ${targetLanguageCode}
                     \".`);
+        } else if (!emptyInputName) {
+            clearMessageBox();   
         }
     } else if (sourcePass) {
-        setMessageBox(`Invalid target URL: ${targetUrlInput.value}`);
+        setMessageBox(`Invalid target URL: \"${targetUrlInput.value}\".`);
     } else if (targetPass) {
-        setMessageBox(`Invalid source URL: ${sourceUrlInput.value}`);
+        setMessageBox(`Invalid source URL: \"${sourceUrlInput.value}\".`);
     } else {
-        setMessageBox(`Both URLs (${sourceUrlInput.value}) and (${targetUrlInput.value}) are invalid.`);
+        setMessageBox(`Both source URL (${sourceUrlInput.value}) and target URL (${targetUrlInput.value}) are invalid.`);
     }
 }
 
