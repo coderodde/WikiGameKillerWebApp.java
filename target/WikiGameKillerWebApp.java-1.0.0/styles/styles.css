@@ -5,7 +5,7 @@ body {
 }
 
 .paramInput {
-    width: 300px;
+    width: 400px;
     padding: 10px 10px;
     margin: 8px 0;
     box-sizing: border-box;
@@ -32,7 +32,7 @@ body {
 }
 
 .paramInputError {
-    width: 300px;
+    width: 400px;
     padding: 10px 10px;
     margin: 8px 0;
     box-sizing: border-box;

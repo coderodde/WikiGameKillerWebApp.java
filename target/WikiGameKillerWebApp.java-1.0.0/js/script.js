@@ -37,17 +37,18 @@ function searchOnMessageCallback(event) {
         for (let index in errorMessages) {
             logError(errorMessages[index]);
         }
+        
     } else if (obj["status"] === "solutionFound") {
         logInfo(`[STATISTICS] Duration: ${obj["duration"]} milliseconds.`);
         logInfo(`[STATISTICS] Number of expanded nodes: ${obj["numberOfExpandedNodes"]}.`)
         logLinkPath(obj["urlPath"], obj["languageCode"]);
-        setSearchReadyButtons();
     } else if (obj["status"] === "halted") {
         logError("[STATISTICS] Search halted.");
         logError(`[STATISTICS] Duration: ${obj["duration"]} milliseconds.`);
         logError(`[STATISTICS] Number of expanded nodes: ${obj["numberOfExpandedNodes"]}.`)
     }
 
+    setSearchReadyButtons();
     searchSocket.close();
     searchSocket = null;
 }
@@ -286,9 +287,8 @@ function logLinkPath(links, languageCode) {
     document.getElementById("log").appendChild(table);
 }
 
-function glueUrl(title) {
-    title = encodeURI(title);
-    title = title.replaceAll("%20", "_");
+function glueUrl(title) {   
+    title = title.replaceAll(" ", "_");
     return `https://en.wikipedia.org/wiki/${title}`;
 }
 
@@ -296,11 +296,15 @@ function getRandomArticles() {
     const socket = constructWebSocket("randomize");
     socket.onmessage = function(event) {
         const obj = JSON.parse(event.data);
-        const title1 = obj["query"]["random"][0]["title"];
-        const title2 = obj["query"]["random"][1]["title"];
+        let title1 = obj["query"]["random"][0]["title"];
+        let title2 = obj["query"]["random"][1]["title"];
+        
+        title1 = decodeURI(title1);
+        title2 = decodeURI(title2);
         
         document.getElementById("sourceUrlInput").value = glueUrl(title1);
         document.getElementById("targetUrlInput").value = glueUrl(title2);
+        validateInputForm();
     };
 
     sendData(socket, "");
@@ -334,7 +338,7 @@ function setOnInvalidInputForm() {
     document.getElementById("doSearchButton")         .disabled = true;
     document.getElementById("setDefaultsButton")      .disabled = false;
     document.getElementById("haltButton")             .disabled = true;
-    document.getElementById("getRandomArticlesButton").disabled = true;
+    document.getElementById("getRandomArticlesButton").disabled = false;
 }
 
 function validateInputForm() {
