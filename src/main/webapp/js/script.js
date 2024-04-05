@@ -3,14 +3,14 @@ let randomizeSocket;
 let sourceUrl;
 let targetUrl;
 
-const inputState = {
-     "threadsInput":            "256" ,
-     "expansionDurationInput":  "4000",
-     "waitTimeoutInput":        "1"   ,
-     "trialsInput":             "2000",
-     "masterSleepInput":        "1"   ,
-     "slaveSleepInput":         "1"   
-};
+const inputMap = {
+    "threadsInput":           document.getElementById("threadsInput"),
+    "expansionDurationInput": document.getElementById("expansionDurationInput"),
+    "waitTimeoutInput":       document.getElementById("waitTimeoutInput"),
+    "trialsInput":            document.getElementById("trialsInput"),
+    "masterSleepInput":       document.getElementById("masterSleepInput"),
+    "slaveSleepInput":        document.getElementById("slaveSleepInput")
+}
 
 const inputNames = {
      "threadsInput":            "Number of threads"         ,
@@ -21,10 +21,76 @@ const inputNames = {
      "slaveSleepInput":         "Slave sleep duration"   
 };
 
+const inputState = {
+     "threadsInput":            "256" ,
+     "expansionDurationInput":  "4000",
+     "waitTimeoutInput":        "1"   ,
+     "trialsInput":             "2000",
+     "masterSleepInput":        "1"   ,
+     "slaveSleepInput":         "1"   
+};
+
+function clearLog() {
+    document.getElementById("log").innerHTML = "";
+}
+
+function clearMessageBox() {
+    setMessageBox("");
+}
+
+function constructWebSocket(endpoint, onMessageCallback) {
+
+    const socket = new WebSocket(constructWebSocketUrl(endpoint));
+
+    socket.onopen = (event) => {
+        console.log("onopen. Event: ", event);
+    };
+
+    socket.onmessage = onMessageCallback;
+    socket.onclose = (event) => {
+        console.log("onclose. Event: ", event);
+    };
+
+    socket.onerror = (event) => {
+        console.log("onerror. Event: ", event);
+    };
+
+    return socket;
+}
+
 function constructWebSocketUrl(endpoint) {
     const host = document.location.host;
     const path = document.location.pathname;
-    return `ws://${host}${path}${endpoint}`;
+    const protocol = document.location.protocol;
+    
+    if (protocol.startsWith("https")) {
+        return `wss://${host}${path}${endpoint}`;
+    } else if (protocol.startsWith("http")) {
+        return `ws://${host}${path}${endpoint}`;
+    } else {
+        throw `Unknown protocol: ${protocol}.`;
+    }
+}
+
+function createLink(lineNumber, link) {
+    const tr           = document.createElement("tr");
+    const tdLineNumber = document.createElement("td");
+    const tdLink       = document.createElement("td");
+    const tdTitle      = document.createElement("td");
+    const a            = document.createElement("a");
+    const title        = getTitle(link);
+    
+    tdLineNumber.innerHTML = `${lineNumber}.`;
+    a.href = link;
+    a.innerHTML = link;
+    tdLink.appendChild(a);
+    tdTitle.innerHTML = title;
+    
+    tr.appendChild(tdLineNumber);
+    tr.appendChild(tdLink);
+    tr.appendChild(tdTitle);
+    
+    return tr;
 }
 
 function searchOnMessageCallback(event) {
@@ -53,25 +119,6 @@ function searchOnMessageCallback(event) {
     searchSocket = null;
 }
 
-function constructWebSocket(endpoint, onMessageCallback) {
-
-    const socket = new WebSocket(constructWebSocketUrl(endpoint));
-
-    socket.onopen = (event) => {
-        console.log("onopen. Event: ", event);
-    };
-
-    socket.onmessage = onMessageCallback;
-    socket.onclose = (event) => {
-        console.log("onclose. Event: ", event);
-    };
-
-    socket.onerror = (event) => {
-        console.log("onerror. Event: ", event);
-    };
-
-    return socket;
-}
 
 function resetParametersToDefaults() {
     document.getElementById("threadsInput")          .value = "256";
@@ -105,15 +152,6 @@ function getValue(str, oldValid) {
     }
     
     return oldValid;
-}
-
-const inputMap = {
-    "threadsInput":           document.getElementById("threadsInput"),
-    "expansionDurationInput": document.getElementById("expansionDurationInput"),
-    "waitTimeoutInput":       document.getElementById("waitTimeoutInput"),
-    "trialsInput":            document.getElementById("trialsInput"),
-    "masterSleepInput":       document.getElementById("masterSleepInput"),
-    "slaveSleepInput":        document.getElementById("slaveSleepInput")
 }
 
 function tryUpdateNumericInputValue(inputId) {
@@ -196,10 +234,6 @@ function wikipediaUrlIsValid(url) {
     return /^(http(s)?:\/\/)?..\.wikipedia\.org\/wiki\/.+$/.test(url);
 }
 
-function colorInputBorder(elem) {
-    document.getElementById("sourceUrlInput").style.borderColor = "red";
-}
-
 function halt() {
     if (searchSocket === null) {
         console.log("Cannot halt. Socket is closed.");
@@ -220,9 +254,6 @@ function halt() {
     setSearchReadyButtons();
 }
 
-function clearLog() {
-    document.getElementById("log").innerHTML = "";
-}
 
 function logInfo(str) {
     const div = document.createElement("div");
@@ -250,27 +281,6 @@ function logLink(link) {
 
 function getTitle(link) {
     return decodeURI(link.substring(link.lastIndexOf("/") + 1));
-}
-
-function createLink(lineNumber, link) {
-    const tr           = document.createElement("tr");
-    const tdLineNumber = document.createElement("td");
-    const tdLink       = document.createElement("td");
-    const tdTitle      = document.createElement("td");
-    const a            = document.createElement("a");
-    const title        = getTitle(link);
-    
-    tdLineNumber.innerHTML = `${lineNumber}.`;
-    a.href = link;
-    a.innerHTML = link;
-    tdLink.appendChild(a);
-    tdTitle.innerHTML = title;
-    
-    tr.appendChild(tdLineNumber);
-    tr.appendChild(tdLink);
-    tr.appendChild(tdTitle);
-    
-    return tr;
 }
 
 function logLinkPath(links, languageCode) {
@@ -431,10 +441,6 @@ function validateInputForm() {
 function setMessageBox(str) {
     const messageBox = document.getElementById("message-box");
     messageBox.innerHTML = str;
-}
-
-function clearMessageBox() {
-    setMessageBox("");
 }
 
 validateInputForm();
