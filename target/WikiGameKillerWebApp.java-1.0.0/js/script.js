@@ -153,7 +153,7 @@ function sendData(ws, json) {
 
 function spawnSearch() {
     if (searchSocket) {
-        setMessageBox(
+        logError(
                 "Trying to spawn search while " +
                 "the previous search process " +
                 "is still running.");
@@ -293,8 +293,13 @@ function glueUrl(title) {
 }
 
 function getRandomArticles() {
-    const socket = constructWebSocket("randomize");
-    socket.onmessage = function(event) {
+    if (randomizeSocket) {
+        logError("Obtaining random articles still running.")
+        return;
+    }
+    
+    randomizeSocket = constructWebSocket("randomize");
+    randomizeSocket.onmessage = function(event) {
         const obj = JSON.parse(event.data);
         let title1 = obj["query"]["random"][0]["title"];
         let title2 = obj["query"]["random"][1]["title"];
@@ -305,9 +310,12 @@ function getRandomArticles() {
         document.getElementById("sourceUrlInput").value = glueUrl(title1);
         document.getElementById("targetUrlInput").value = glueUrl(title2);
         validateInputForm();
+        
+        randomizeSocket.close();
+        randomizeSocket = null;
     };
 
-    sendData(socket, "");
+    sendData(randomizeSocket, "");
 }
 
 function getLanguageCode(url) {
