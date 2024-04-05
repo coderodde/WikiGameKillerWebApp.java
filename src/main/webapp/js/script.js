@@ -24,7 +24,13 @@ const inputNames = {
 function constructWebSocketUrl(endpoint) {
     const host = document.location.host;
     const path = document.location.pathname;
-    return `ws://${host}${path}${endpoint}`;
+    const protocol = document.location.protocol;
+    
+    if (protocol.startsWith("https")) {
+        return `wss://${host}${path}${endpoint}`;
+    } else {
+        return `ws://${host}${path}${endpoint}`;
+    }
 }
 
 function searchOnMessageCallback(event) {
@@ -304,6 +310,7 @@ function getRandomArticles() {
     };
 
     sendData(socket, "");
+    setSearchReadyButtons();
 }
 
 function getLanguageCode(url) {
@@ -334,7 +341,7 @@ function setOnInvalidInputForm() {
     document.getElementById("doSearchButton")         .disabled = true;
     document.getElementById("setDefaultsButton")      .disabled = false;
     document.getElementById("haltButton")             .disabled = true;
-    document.getElementById("getRandomArticlesButton").disabled = true;
+    document.getElementById("getRandomArticlesButton").disabled = false;
 }
 
 function validateInputForm() {
