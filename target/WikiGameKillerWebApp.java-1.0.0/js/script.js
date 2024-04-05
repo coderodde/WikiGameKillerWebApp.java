@@ -52,7 +52,8 @@ function clearMessageBox() {
 
 function constructWebSocket(endpoint, onMessageCallback) {
 
-    const socket = new WebSocket(constructWebSocketUrl(endpoint));
+    const url = constructWebSocketUrl(endpoint);
+    const socket = new WebSocket(url);
 
     socket.onopen = (event) => {
         console.log("onopen. Event: ", event);
@@ -121,22 +122,22 @@ function getRandomArticles() {
         return;
     }
     
-    randomizeSocket = constructWebSocket("randomize");
-    randomizeSocket.onmessage = function(event) {
-        const obj = JSON.parse(event.data);
-        let title1 = obj["query"]["random"][0]["title"];
-        let title2 = obj["query"]["random"][1]["title"];
-        
-        title1 = decodeURI(title1);
-        title2 = decodeURI(title2);
-        
-        document.getElementById("sourceUrlInput").value = glueUrl(title1);
-        document.getElementById("targetUrlInput").value = glueUrl(title2);
-        validateInputForm();
-        
-        randomizeSocket.close();
+    randomizeSocket = constructWebSocket("randomize", 
+                                         randomizeOnMessageCallback);
+                                         
+    randomizeSocket.onopen = function(event) {
+        console.log("randomizeSocket.onopen, event:", event);
+    }
+                                         
+    randomizeSocket.onclose = function(event) {
+        console.log("randomizeSocket.onclose, event:", event);
         randomizeSocket = null;
-    };
+    }
+    
+    randomizeSocket.onerror = function(event) {
+        console.log("randomizeSocket.onerror, event:", event);
+        randomizeSocket = null;
+    }
 
     sendData(randomizeSocket, "");
 }
@@ -222,6 +223,25 @@ function logLinkPath(links, languageCode) {
     }
     
     document.getElementById("log").appendChild(table);
+}
+
+function randomizeOnMessageCallback(event) {
+    const obj = JSON.parse(event.data);
+    let title1 = obj["query"]["random"][0]["title"];
+    let title2 = obj["query"]["random"][1]["title"];
+
+    title1 = decodeURI(title1);
+    title2 = decodeURI(title2);
+
+    document.getElementById("sourceUrlInput").value = glueUrl(title1);
+    document.getElementById("targetUrlInput").value = glueUrl(title2);
+
+    if (validateInputForm()) {
+        clearMessageBox();
+    }
+
+    randomizeSocket.close();
+    randomizeSocket = null;
 }
 
 function resetParametersToDefaults() {
@@ -453,4 +473,5 @@ function wikipediaUrlIsValid(url) {
     return /^(http(s)?:\/\/)?..\.wikipedia\.org\/wiki\/.+$/.test(url);
 }
 
+console.log(`Current port number is ${document.location.port}.`);
 validateInputForm();
