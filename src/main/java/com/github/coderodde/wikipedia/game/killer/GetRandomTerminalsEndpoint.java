@@ -7,13 +7,16 @@ import java.nio.charset.Charset;
 import java.util.Random;
 import java.util.logging.Level;
 import java.util.logging.Logger;
+import javax.websocket.OnClose;
+import javax.websocket.OnError;
 import javax.websocket.OnMessage;
+import javax.websocket.OnOpen;
 import javax.websocket.Session;
 import javax.websocket.server.ServerEndpoint;
 import org.apache.commons.io.IOUtils;
 
 @ServerEndpoint(value = "/randomize")
-public final class GetRandomTerminalsEndpoint {
+public class GetRandomTerminalsEndpoint {
     
     private static final Logger LOGGER = 
             Logger.getLogger(GetRandomTerminalsEndpoint.class.getName());
@@ -21,6 +24,15 @@ public final class GetRandomTerminalsEndpoint {
     private static final String API_URL = 
             "https://en.wikipedia.org/w/api.php?" + 
             "action=query&list=random&rnnamespace=0&rnlimit=2&format=json&utf8=1";
+    
+    // 15 seconds:
+    private static final long CONNECTION_TIMEOUT_MILLIS = 1000 * 15;
+    
+    @OnOpen
+    public void onOpen(final Session session) {
+        session.setMaxIdleTimeout(CONNECTION_TIMEOUT_MILLIS);
+        LOGGER.log(Level.INFO, "WebSocket connection open.");
+    }
     
     @OnMessage
     public void onMessage(final Session session, final String ignored) {
@@ -41,5 +53,17 @@ public final class GetRandomTerminalsEndpoint {
                     ex.getMessage());
             
         }
+    }
+    
+    @OnClose
+    public void onClose(final Session session) {
+        LOGGER.log(Level.INFO, "WebSocket connection is closed.");
+    }
+    
+    @OnError
+    public void onError(final Session session, final Throwable throwable) {
+        LOGGER.log(Level.SEVERE, 
+                   "WebSocket threw: {0}.", 
+                   throwable.getMessage());
     }
 }

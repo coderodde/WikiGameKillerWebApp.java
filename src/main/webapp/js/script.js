@@ -21,6 +21,18 @@ const inputNames = {
      "slaveSleepInput":         "Slave sleep duration"   
 };
 
+function constructWebSocketUrl(endpoint) {
+    const host = document.location.host;
+    const path = document.location.pathname;
+    const protocol = document.location.protocol;
+    
+    if (protocol.startsWith("https")) {
+        return `wss://${host}${path}${endpoint}`;
+    } else {
+        return `ws://${host}${path}${endpoint}`;
+    }
+}
+
 const inputState = {
      "threadsInput":            "256" ,
      "expansionDurationInput":  "4000",
@@ -40,7 +52,8 @@ function clearMessageBox() {
 
 function constructWebSocket(endpoint, onMessageCallback) {
 
-    const socket = new WebSocket(constructWebSocketUrl(endpoint));
+    const url = constructWebSocketUrl(endpoint);
+    const socket = new WebSocket(url);
 
     socket.onopen = (event) => {
         console.log("onopen. Event: ", event);
@@ -93,6 +106,162 @@ function createLink(lineNumber, link) {
     return tr;
 }
 
+function getLanguageCode(url) {
+    if (url.startsWith("https://")) {
+        url = url.substring("https://".length);
+    } else if (url.startsWith("http://")) {
+        url = url.substring("http://").length;
+    }
+    
+    return url.substring(0, 2);
+}
+
+function getRandomArticles() {
+    if (randomizeSocket) {
+        logError("Obtaining random articles still running.")
+        return;
+    }
+    
+    randomizeSocket = constructWebSocket("randomize", 
+                                         randomizeOnMessageCallback);
+                                         
+    randomizeSocket.onopen = function(event) {
+        console.log("randomizeSocket.onopen, event:", event);
+    }
+                                         
+    randomizeSocket.onclose = function(event) {
+        console.log("randomizeSocket.onclose, event:", event);
+        randomizeSocket = null;
+    }
+    
+    randomizeSocket.onerror = function(event) {
+        console.log("randomizeSocket.onerror, event:", event);
+        randomizeSocket = null;
+    }
+
+    sendData(randomizeSocket, "");
+}
+
+function getTitle(link) {
+    return decodeURI(link.substring(link.lastIndexOf("/") + 1));
+}
+
+function getValue(str, oldValid) {
+    if (str === "") {
+        return "";
+    }
+    
+    if (str.includes("e") || str.includes("E")) {
+        return oldValid;
+    }
+    
+    if (/^\d+$/.test(str) && Number(str) > 0) {
+        return str;
+    }
+    
+    return oldValid;
+}
+
+function glueUrl(title) {   
+    title = title.replaceAll(" ", "_");
+    return `https://en.wikipedia.org/wiki/${title}`;
+}
+
+function halt() {
+    if (searchSocket === null) {
+        console.log("Cannot halt. Socket is closed.");
+        return;
+    } else {
+        console.log("Halting search on open WebSocket.");
+    }
+
+    const requestObject = {
+        "action": "halt",
+        "searchParameters": {
+            "sourceUrl": sourceUrl,
+            "targetUrl": targetUrl
+        }
+    };
+
+    sendData(searchSocket, JSON.stringify(requestObject));
+    setSearchReadyButtons();
+}
+
+function logError(str) {
+    const div = document.createElement("div");
+    const text = document.createTextNode(str);
+    div.appendChild(text);
+    div.className = "logErrorClass";
+    document.getElementById("log").appendChild(div);
+}
+
+function logInfo(str) {
+    const div = document.createElement("div");
+    const text = document.createTextNode(str);
+    div.appendChild(text);
+    div.className = "logInfoClass";
+    document.getElementById("log").appendChild(div);
+}
+
+function logLink(link) {
+    const div = document.createElement("div");
+    const text = document.createTextNode(link);
+    div.appendChild(text);
+    div.className = "logLinkClass";
+    document.getElementById("log").appendChild(div);
+}
+
+function logLinkPath(links, languageCode) {
+    const table = document.createElement("table");
+    let lineNumber = 1;
+    
+    for (let index in links) {
+        table.appendChild(
+                createLink(
+                    lineNumber++,
+                    `https://${languageCode}.wikipedia.org/wiki/${links[index]}`));
+    }
+    
+    document.getElementById("log").appendChild(table);
+}
+
+function randomizeOnMessageCallback(event) {
+    const obj = JSON.parse(event.data);
+    let title1 = obj["query"]["random"][0]["title"];
+    let title2 = obj["query"]["random"][1]["title"];
+
+    title1 = decodeURI(title1);
+    title2 = decodeURI(title2);
+
+    document.getElementById("sourceUrlInput").value = glueUrl(title1);
+    document.getElementById("targetUrlInput").value = glueUrl(title2);
+
+    if (validateInputForm()) {
+        clearMessageBox();
+    }
+
+    randomizeSocket.close();
+    randomizeSocket = null;
+}
+
+function resetParametersToDefaults() {
+    document.getElementById("threadsInput")          .value = "256";
+    document.getElementById("expansionDurationInput").value = "4000";
+    document.getElementById("waitTimeoutInput")      .value = "1";
+    document.getElementById("trialsInput")           .value = "2000";
+    document.getElementById("masterSleepInput")      .value = "1";
+    document.getElementById("slaveSleepInput")       .value = "1";
+    
+    inputState = {
+        "threadsInput":            "256" ,
+        "expansionDurationInput":  "4000",
+        "waitTimeoutInput":        "1"   ,
+        "trialsInput":             "2000",
+        "masterSleepInput":        "1"   ,
+        "slaveSleepInput":         "1"   
+    };
+}
+
 function searchOnMessageCallback(event) {
     const text = event.data;
     const obj = JSON.parse(text);
@@ -119,66 +288,6 @@ function searchOnMessageCallback(event) {
     searchSocket = null;
 }
 
-
-function resetParametersToDefaults() {
-    document.getElementById("threadsInput")          .value = "256";
-    document.getElementById("expansionDurationInput").value = "4000";
-    document.getElementById("waitTimeoutInput")      .value = "1";
-    document.getElementById("trialsInput")           .value = "2000";
-    document.getElementById("masterSleepInput")      .value = "1";
-    document.getElementById("slaveSleepInput")       .value = "1";
-    
-    inputState = {
-        "threadsInput":            "256" ,
-        "expansionDurationInput":  "4000",
-        "waitTimeoutInput":        "1"   ,
-        "trialsInput":             "2000",
-        "masterSleepInput":        "1"   ,
-        "slaveSleepInput":         "1"   
-    };
-}
-
-function getValue(str, oldValid) {
-    if (str === "") {
-        return "";
-    }
-    
-    if (str.includes("e") || str.includes("E")) {
-        return oldValid;
-    }
-    
-    if (/^\d+$/.test(str) && Number(str) > 0) {
-        return str;
-    }
-    
-    return oldValid;
-}
-
-function tryUpdateNumericInputValue(inputId) {
-    const element = document.getElementById(inputId);
-    const newValue = element.value.trim();
-    const nextValue = getValue(newValue, 
-                               inputState[inputId]);
-    
-    if (nextValue === "") {
-        // Show place holder:
-        inputMap[inputId].value = "";
-        validateInputForm();
-        return;
-    }
-    
-    const number = Number(nextValue);
-    
-    if (number > 0) {
-        element.value = nextValue;
-        inputState[inputId] = nextValue;
-    } else {
-        element.value = inputState[inputId]
-    }
-    
-    validateInputForm();
-}
-
 function sendData(ws, json) {
     if (ws.readyState) {
         ws.send(json);
@@ -187,6 +296,32 @@ function sendData(ws, json) {
             sendData(ws, json)
         }, 100);
     }
+}
+
+function setMessageBox(str) {
+    const messageBox = document.getElementById("message-box");
+    messageBox.innerHTML = str;
+}
+
+function setOnInvalidInputForm() {
+    document.getElementById("doSearchButton")         .disabled = true;
+    document.getElementById("setDefaultsButton")      .disabled = false;
+    document.getElementById("haltButton")             .disabled = true;
+    document.getElementById("getRandomArticlesButton").disabled = false;
+}
+
+function setOnSearchButtons() {
+    document.getElementById("doSearchButton")         .disabled = true;
+    document.getElementById("setDefaultsButton")      .disabled = true;
+    document.getElementById("haltButton")             .disabled = false;
+    document.getElementById("getRandomArticlesButton").disabled = true;
+}
+
+function setSearchReadyButtons() {
+    document.getElementById("doSearchButton")         .disabled = false;
+    document.getElementById("setDefaultsButton")      .disabled = false;
+    document.getElementById("haltButton")             .disabled = true;
+    document.getElementById("getRandomArticlesButton").disabled = false;
 }
 
 function spawnSearch() {
@@ -230,133 +365,29 @@ function spawnSearch() {
     sendData(searchSocket, json);
 }
 
-function wikipediaUrlIsValid(url) {
-    return /^(http(s)?:\/\/)?..\.wikipedia\.org\/wiki\/.+$/.test(url);
-}
-
-function halt() {
-    if (searchSocket === null) {
-        console.log("Cannot halt. Socket is closed.");
-        return;
-    } else {
-        console.log("Halting search on open WebSocket.");
-    }
-
-    const requestObject = {
-        "action": "halt",
-        "searchParameters": {
-            "sourceUrl": sourceUrl,
-            "targetUrl": targetUrl
-        }
-    };
-
-    sendData(searchSocket, JSON.stringify(requestObject));
-    setSearchReadyButtons();
-}
-
-
-function logInfo(str) {
-    const div = document.createElement("div");
-    const text = document.createTextNode(str);
-    div.appendChild(text);
-    div.className = "logInfoClass";
-    document.getElementById("log").appendChild(div);
-}
-
-function logError(str) {
-    const div = document.createElement("div");
-    const text = document.createTextNode(str);
-    div.appendChild(text);
-    div.className = "logErrorClass";
-    document.getElementById("log").appendChild(div);
-}
-
-function logLink(link) {
-    const div = document.createElement("div");
-    const text = document.createTextNode(link);
-    div.appendChild(text);
-    div.className = "logLinkClass";
-    document.getElementById("log").appendChild(div);
-}
-
-function getTitle(link) {
-    return decodeURI(link.substring(link.lastIndexOf("/") + 1));
-}
-
-function logLinkPath(links, languageCode) {
-    const table = document.createElement("table");
-    let lineNumber = 1;
+function tryUpdateNumericInputValue(inputId) {
+    const element = document.getElementById(inputId);
+    const newValue = element.value.trim();
+    const nextValue = getValue(newValue, 
+                               inputState[inputId]);
     
-    for (let index in links) {
-        table.appendChild(
-                createLink(
-                    lineNumber++,
-                    `https://${languageCode}.wikipedia.org/wiki/${links[index]}`));
-    }
-    
-    document.getElementById("log").appendChild(table);
-}
-
-function glueUrl(title) {   
-    title = title.replaceAll(" ", "_");
-    return `https://en.wikipedia.org/wiki/${title}`;
-}
-
-function getRandomArticles() {
-    if (randomizeSocket) {
-        logError("Obtaining random articles still running.")
-        return;
-    }
-    
-    randomizeSocket = constructWebSocket("randomize");
-    randomizeSocket.onmessage = function(event) {
-        const obj = JSON.parse(event.data);
-        let title1 = obj["query"]["random"][0]["title"];
-        let title2 = obj["query"]["random"][1]["title"];
-        
-        title1 = decodeURI(title1);
-        title2 = decodeURI(title2);
-        
-        document.getElementById("sourceUrlInput").value = glueUrl(title1);
-        document.getElementById("targetUrlInput").value = glueUrl(title2);
+    if (nextValue === "") {
+        // Show place holder:
+        inputMap[inputId].value = "";
         validateInputForm();
-        
-        randomizeSocket.close();
-        randomizeSocket = null;
-    };
-
-    sendData(randomizeSocket, "");
-}
-
-function getLanguageCode(url) {
-    if (url.startsWith("https://")) {
-        url = url.substring("https://".length);
-    } else if (url.startsWith("http://")) {
-        url = url.substring("http://").length;
+        return;
     }
     
-    return url.substring(0, 2);
-}
-
-function setSearchReadyButtons() {
-    document.getElementById("doSearchButton")         .disabled = false;
-    document.getElementById("setDefaultsButton")      .disabled = false;
-    document.getElementById("haltButton")             .disabled = true;
-    document.getElementById("getRandomArticlesButton").disabled = false;
-}
-
-function setOnSearchButtons() {
-    document.getElementById("doSearchButton")         .disabled = true;
-    document.getElementById("setDefaultsButton")      .disabled = true;
-    document.getElementById("haltButton")             .disabled = false;
-    document.getElementById("getRandomArticlesButton").disabled = true;
-}
-
-function setOnInvalidInputForm() {
-    document.getElementById("doSearchButton")         .disabled = true;
-    document.getElementById("setDefaultsButton")      .disabled = false;
-    document.getElementById("haltButton")             .disabled = true;
-    document.getElementById("getRandomArticlesButton").disabled = false;
+    const number = Number(nextValue);
+    
+    if (number > 0) {
+        element.value = nextValue;
+        inputState[inputId] = nextValue;
+    } else {
+        element.value = inputState[inputId]
+    }
+    
+    validateInputForm();
 }
 
 function validateInputForm() {
@@ -438,9 +469,9 @@ function validateInputForm() {
     }
 }
 
-function setMessageBox(str) {
-    const messageBox = document.getElementById("message-box");
-    messageBox.innerHTML = str;
+function wikipediaUrlIsValid(url) {
+    return /^(http(s)?:\/\/)?..\.wikipedia\.org\/wiki\/.+$/.test(url);
 }
 
+console.log(`Current port number is ${document.location.port}.`);
 validateInputForm();

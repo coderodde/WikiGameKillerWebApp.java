@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <project xmlns="http://maven.apache.org/POM/4.0.0"
-    xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
-    xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/maven-v4_0_0.xsd">
+         xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/maven-v4_0_0.xsd">
     <modelVersion>4.0.0</modelVersion>
     <groupId>com.github.coderodde.wikipedia.game.killer</groupId>
     <artifactId>WikiGameKillerWebApp.java</artifactId>
@@ -9,7 +9,7 @@
     <packaging>jar</packaging>
     <name>WikiGameKillerWebApp.java</name>
 
-<!--    <parent>
+    <!--    <parent>
         <groupId>com.baeldung.core-java-modules</groupId>
         <artifactId>core-java-modules</artifactId>
         <version>0.0.1-SNAPSHOT</version>
@@ -23,6 +23,20 @@
             <scope>provided</scope>
         </dependency>
         
+        <!-- https://mvnrepository.com/artifact/org.apache.tomcat.embed/tomcat-embed-websocket -->
+        <dependency>
+            <groupId>org.apache.tomcat.embed</groupId>
+            <artifactId>tomcat-embed-websocket</artifactId>
+            <version>9.0.30</version>
+        </dependency>
+        
+        <!-- https://mvnrepository.com/artifact/org.apache.tomcat.embed/tomcat-embed-core -->
+        <dependency>
+            <groupId>org.apache.tomcat.embed</groupId>
+            <artifactId>tomcat-embed-core</artifactId>
+            <version>9.0.30</version>
+        </dependency>
+
         <dependency>
             <groupId>com.github.coderodde.faulty-graph-pathfinder</groupId>
             <artifactId>ThreadPoolBidirectionalBFSPathFinder.java</artifactId>
@@ -40,17 +54,25 @@
             <artifactId>gson</artifactId>
             <version>${gson.version}</version>
         </dependency>
+        <dependency>
+            <groupId>javax.enterprise</groupId>
+            <artifactId>cdi-api</artifactId>
+            <version>2.0</version>
+            <type>jar</type>
+        </dependency>
     </dependencies>
 
-    <properties>
-        <javax.websocket-api.version>1.1</javax.websocket-api.version>
-        <gson.version>2.10.1</gson.version>
-        <maven.compiler.source>20</maven.compiler.source>
-        <maven.compiler.target>20</maven.compiler.target>
-    </properties>
-    
     <build>
         <plugins>
+            <plugin>
+                <groupId>com.heroku.sdk</groupId>
+                <artifactId>heroku-maven-plugin</artifactId>
+                <version>3.0.7</version>
+                <configuration>
+                    <appName>wiki-game-killer</appName>
+                </configuration>
+            </plugin>
+            
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-dependency-plugin</artifactId>
@@ -65,4 +87,11 @@
             </plugin>
         </plugins>
     </build>
+
+    <properties>
+        <javax.websocket-api.version>1.1</javax.websocket-api.version>
+        <gson.version>2.10.1</gson.version>
+        <maven.compiler.source>20</maven.compiler.source>
+        <maven.compiler.target>20</maven.compiler.target>
+    </properties>
 </project>
