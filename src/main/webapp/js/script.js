@@ -23,13 +23,13 @@ const inputNames = {
 
 function constructWebSocketUrl(endpoint) {
     const host = document.location.host;
-    const path = document.location.pathname;
+//    const path = document.location.pathname;
     const protocol = document.location.protocol;
     
     if (protocol.startsWith("https")) {
-        return `wss://${host}${path}${endpoint}`;
+        return `wss://${host}/${endpoint}`;
     } else {
-        return `ws://${host}${path}${endpoint}`;
+        return `ws://${host}/${endpoint}`;
     }
 }
 
