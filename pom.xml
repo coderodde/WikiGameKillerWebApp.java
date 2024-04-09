@@ -22,20 +22,20 @@
             <version>${javax.websocket-api.version}</version>
             <scope>provided</scope>
         </dependency>
-        
-        <!-- https://mvnrepository.com/artifact/org.apache.tomcat.embed/tomcat-embed-websocket -->
+<!--        
+         https://mvnrepository.com/artifact/org.apache.tomcat.embed/tomcat-embed-websocket 
         <dependency>
             <groupId>org.apache.tomcat.embed</groupId>
             <artifactId>tomcat-embed-websocket</artifactId>
             <version>9.0.30</version>
         </dependency>
         
-        <!-- https://mvnrepository.com/artifact/org.apache.tomcat.embed/tomcat-embed-core -->
+         https://mvnrepository.com/artifact/org.apache.tomcat.embed/tomcat-embed-core 
         <dependency>
             <groupId>org.apache.tomcat.embed</groupId>
             <artifactId>tomcat-embed-core</artifactId>
-            <version>9.0.30</version>
-        </dependency>
+            <version>9.0.30</version>-->
+        <!--</dependency>-->
 
         <dependency>
             <groupId>com.github.coderodde.faulty-graph-pathfinder</groupId>

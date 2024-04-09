@@ -77,7 +77,7 @@ function constructWebSocketUrl(endpoint) {
     const protocol = document.location.protocol;
     
     if (protocol.startsWith("https")) {
-        return `wss://${host}${path}${endpoint}`;
+        return `wss://${host}:443${path}${endpoint}`;
     } else if (protocol.startsWith("http")) {
         return `ws://${host}${path}${endpoint}`;
     } else {
