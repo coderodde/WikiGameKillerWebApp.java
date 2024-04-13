@@ -42,40 +42,7 @@ public class SearchEndpoint {
      */
     private static final Pattern WIKIPEDIA_URL_FORMAT_PATTERN = 
             Pattern.compile(WIKIPEDIA_URL_FORMAT);
-            
-    private static final String INVALID_TERMINAL_URLS = 
-            """
-            {
-                "status":"invalidTerminals",
-                "sourceUrl":"%s",
-                "targetUrl":"%s"
-            }
-            """;
-    
-    private static final String SOURCE_TARGET_SAME_JSON = 
-            """
-            {
-                "status":"sourceTargetEqual",
-                "url":"%s"
-            }
-            """;
-    
-    private static final String LANGUAGE_CODES_DIFFERENT = 
-            """
-            {
-                "status":"differentLanguageCodes",
-                "sourceLanguage":"%s",
-                "targetLanguage":"%s"
-            }
-            """;
-    
-    private static final String HALT_JSON = 
-            """
-            {
-                "status":"halt"
-            }
-            """;
-    
+
     private static final long CONNECTION_TIMEOUT_MILLIS = 1000 * 120; // 120 s.
     
     private static final Map<Session, SearchThread> SESSION_TO_THRED_MAP = 

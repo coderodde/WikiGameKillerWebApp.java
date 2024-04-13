@@ -1,1 +1,1 @@
-web: java -jar target/WikiGameKillerWebApp.java-1.0.0.jar
+web: java $JAVA_OPTS -jar WikiGameKillerWebApp.java/target/dependency/webapp-runner.jar --port $PORT /target/WikiGameKillerWebApp.java-1.0.0.war
