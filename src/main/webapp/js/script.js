@@ -23,13 +23,12 @@ const inputNames = {
 
 function constructWebSocketUrl(endpoint) {
     const host = document.location.host;
-    const path = document.location.pathname;
     const protocol = document.location.protocol;
     
     if (protocol.startsWith("https")) {
-        return `wss://${host}${path}${endpoint}`;
+        return `wss://${host}/${endpoint}`;
     } else {
-        return `ws://${host}${path}${endpoint}`;
+        return `ws://${host}/${endpoint}`;
     }
 }
 
@@ -54,35 +53,8 @@ function constructWebSocket(endpoint, onMessageCallback) {
 
     const url = constructWebSocketUrl(endpoint);
     const socket = new WebSocket(url);
-
-    socket.onopen = (event) => {
-        console.log("onopen. Event: ", event);
-    };
-
     socket.onmessage = onMessageCallback;
-    socket.onclose = (event) => {
-        console.log("onclose. Event: ", event);
-    };
-
-    socket.onerror = (event) => {
-        console.log("onerror. Event: ", event);
-    };
-
     return socket;
-}
-
-function constructWebSocketUrl(endpoint) {
-    const host = document.location.host;
-    const path = document.location.pathname;
-    const protocol = document.location.protocol;
-    
-    if (protocol.startsWith("https")) {
-        return `wss://${host}${path}${endpoint}`;
-    } else if (protocol.startsWith("http")) {
-        return `ws://${host}${path}${endpoint}`;
-    } else {
-        throw `Unknown protocol: ${protocol}.`;
-    }
 }
 
 function createLink(lineNumber, link) {
@@ -340,6 +312,20 @@ function spawnSearch() {
 
     setOnSearchButtons();
     searchSocket = constructWebSocket("search", searchOnMessageCallback);
+    
+    searchSocket.onopen = function(evt) {
+        console.log("searchSocket.onopen, event:", event);
+    };
+    
+    searchSocket.onclose = function(evt) {
+        console.log("searchSocket.onclose, event:", event);
+        searchSocket = null;
+    };
+    
+    searchSocket.onerror = function(evt) {
+        console.log("searchSocket.onerror, event:", event);''
+        searchSocket = null;
+    };
 
     const searchObject = {
         "action": "search",
