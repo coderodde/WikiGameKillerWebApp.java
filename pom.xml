@@ -6,7 +6,7 @@
     <groupId>com.github.coderodde.wikipedia.game.killer</groupId>
     <artifactId>WikiGameKillerWebApp.java</artifactId>
     <version>1.0.0</version>
-    <packaging>jar</packaging>
+    <packaging>war</packaging>
     <name>WikiGameKillerWebApp.java</name>
 
     <!--    <parent>
@@ -19,23 +19,23 @@
         <dependency>
             <groupId>javax.websocket</groupId>
             <artifactId>javax.websocket-api</artifactId>
-            <version>${javax.websocket-api.version}</version>
+            <version>1.1</version>
             <scope>provided</scope>
         </dependency>
         
-        <!-- https://mvnrepository.com/artifact/org.apache.tomcat.embed/tomcat-embed-websocket -->
+<!--         https://mvnrepository.com/artifact/org.apache.tomcat.embed/tomcat-embed-websocket 
         <dependency>
             <groupId>org.apache.tomcat.embed</groupId>
             <artifactId>tomcat-embed-websocket</artifactId>
             <version>9.0.30</version>
         </dependency>
         
-        <!-- https://mvnrepository.com/artifact/org.apache.tomcat.embed/tomcat-embed-core -->
+         https://mvnrepository.com/artifact/org.apache.tomcat.embed/tomcat-embed-core 
         <dependency>
             <groupId>org.apache.tomcat.embed</groupId>
             <artifactId>tomcat-embed-core</artifactId>
             <version>9.0.30</version>
-        </dependency>
+        </dependency>-->
 
         <dependency>
             <groupId>com.github.coderodde.faulty-graph-pathfinder</groupId>
