@@ -197,6 +197,22 @@ function logLinkPath(links, languageCode) {
     document.getElementById("log").appendChild(table);
 }
 
+function prettify(numberString) {
+    let prettyString = "";
+    let digitIndex = 0;
+    
+    for (let i = numberString.length - 1; i >= 0; i--) {
+        prettyString = numberString[i] + prettyString;
+        digitIndex++;
+        
+        if (digitIndex % 3 === 0 && i > 0) {
+            prettyString = " " + prettyString;
+        }
+    }
+    
+    return prettyString;
+}
+
 function randomizeOnMessageCallback(event) {
     const obj = JSON.parse(event.data);
     let title1 = obj["query"]["random"][0]["title"];
@@ -214,6 +230,10 @@ function randomizeOnMessageCallback(event) {
 
     randomizeSocket.close();
     randomizeSocket = null;
+}
+
+function removePrettySpaces(value) {
+    return value.replace(/\s+/g, '');  
 }
 
 function resetParametersToDefaults() {
@@ -353,7 +373,8 @@ function spawnSearch() {
 
 function tryUpdateNumericInputValue(inputId) {
     const element = document.getElementById(inputId);
-    const newValue = element.value.trim();
+    let newValue = element.value.trim();
+    newValue = removePrettySpaces(newValue);
     const nextValue = getValue(newValue, 
                                inputState[inputId]);
     
@@ -367,7 +388,7 @@ function tryUpdateNumericInputValue(inputId) {
     const number = Number(nextValue);
     
     if (number > 0) {
-        element.value = nextValue;
+        element.value = prettify(nextValue);
         inputState[inputId] = nextValue;
     } else {
         element.value = inputState[inputId]
