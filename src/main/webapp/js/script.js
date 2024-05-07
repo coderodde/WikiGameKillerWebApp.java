@@ -33,12 +33,12 @@ function constructWebSocketUrl(endpoint) {
 }
 
 const inputState = {
-     "threadsInput":            "256" ,
-     "expansionDurationInput":  "4000",
-     "waitTimeoutInput":        "1"   ,
-     "trialsInput":             "2000",
-     "masterSleepInput":        "1"   ,
-     "slaveSleepInput":         "1"   
+     "threadsInput":            "512"    ,
+     "expansionDurationInput":  "4000"   ,
+     "waitTimeoutInput":        "1000"   ,
+     "trialsInput":             "2000"   ,
+     "masterSleepInput":        "1000000",
+     "slaveSleepInput":         "50000"   
 };
 
 function clearLog() {
@@ -67,7 +67,7 @@ function createLink(lineNumber, link) {
     
     tdLineNumber.innerHTML = `${lineNumber}.`;
     a.href = link;
-    a.innerHTML = link;
+    a.innerHTML = getTitle(link);
     tdLink.appendChild(a);
     tdTitle.innerHTML = title;
     
@@ -115,7 +115,8 @@ function getRandomArticles() {
 }
 
 function getTitle(link) {
-    return decodeURI(link.substring(link.lastIndexOf("/") + 1));
+    return decodeURI(link.substring(link.lastIndexOf("/") + 1))
+                    .replace(/_+/g, ' ');
 }
 
 function getValue(str, oldValid) {
@@ -197,6 +198,22 @@ function logLinkPath(links, languageCode) {
     document.getElementById("log").appendChild(table);
 }
 
+function prettify(numberString) {
+    let prettyString = "";
+    let digitIndex = 0;
+    
+    for (let i = numberString.length - 1; i >= 0; i--) {
+        prettyString = numberString[i] + prettyString;
+        digitIndex++;
+        
+        if (digitIndex % 3 === 0 && i > 0) {
+            prettyString = " " + prettyString;
+        }
+    }
+    
+    return prettyString;
+}
+
 function randomizeOnMessageCallback(event) {
     const obj = JSON.parse(event.data);
     let title1 = obj["query"]["random"][0]["title"];
@@ -216,21 +233,25 @@ function randomizeOnMessageCallback(event) {
     randomizeSocket = null;
 }
 
+function removePrettySpaces(value) {
+    return value.replace(/\s+/g, '');  
+}
+
 function resetParametersToDefaults() {
-    document.getElementById("threadsInput")          .value = "256";
-    document.getElementById("expansionDurationInput").value = "4000";
-    document.getElementById("waitTimeoutInput")      .value = "1";
-    document.getElementById("trialsInput")           .value = "2000";
-    document.getElementById("masterSleepInput")      .value = "1";
-    document.getElementById("slaveSleepInput")       .value = "1";
+    document.getElementById("threadsInput")          .value = "512";
+    document.getElementById("expansionDurationInput").value = "4 000";
+    document.getElementById("waitTimeoutInput")      .value = "1 000";
+    document.getElementById("trialsInput")           .value = "2 000";
+    document.getElementById("masterSleepInput")      .value = "1 000 000";
+    document.getElementById("slaveSleepInput")       .value = "50 000";
     
     inputState = {
-        "threadsInput":            "256" ,
-        "expansionDurationInput":  "4000",
-        "waitTimeoutInput":        "1"   ,
-        "trialsInput":             "2000",
-        "masterSleepInput":        "1"   ,
-        "slaveSleepInput":         "1"   
+        "threadsInput":            "256"    ,
+        "expansionDurationInput":  "4000"   ,
+        "waitTimeoutInput":        "1000000",
+        "trialsInput":             "2000"   ,
+        "masterSleepInput":        "1000000",
+        "slaveSleepInput":         "1000000"   
     };
 }
 
@@ -330,16 +351,19 @@ function spawnSearch() {
     const searchObject = {
         "action": "search",
         "status": "ignoreParam",
+        
         "searchParameters": {
-            "sourceUrl": document.getElementById("sourceUrlInput").value,
-            "targetUrl": document.getElementById("targetUrlInput").value,
-            "numberOfThreads": Number(document.getElementById("threadsInput").value),
-            "expansionDuration": Number(document.getElementById("expansionDurationInput").value),
-            "waitTimeout": Number(document.getElementById("waitTimeoutInput").value),
-            "masterTrials": Number(document.getElementById("trialsInput").value),
-            "masterSleepDuration": Number(document.getElementById("masterSleepInput").value),
-            "slaveSleepDuration": Number(document.getElementById("slaveSleepInput").value),
+            "sourceUrl":           document.getElementById("sourceUrlInput").value,
+            "targetUrl":           document.getElementById("targetUrlInput").value,
+            
+            "numberOfThreads":     Number(removePrettySpaces(document.getElementById("threadsInput"          ).value)),
+            "expansionDuration":   Number(removePrettySpaces(document.getElementById("expansionDurationInput").value)),
+            "waitTimeout":         Number(removePrettySpaces(document.getElementById("waitTimeoutInput"      ).value)),
+            "masterTrials":        Number(removePrettySpaces(document.getElementById("trialsInput"           ).value)),
+            "masterSleepDuration": Number(removePrettySpaces(document.getElementById("masterSleepInput"      ).value)),
+            "slaveSleepDuration":  Number(removePrettySpaces(document.getElementById("slaveSleepInput"       ).value)),
         },
+        
         "errorMessages": [],
         "infoMessages": []
     };
@@ -353,7 +377,8 @@ function spawnSearch() {
 
 function tryUpdateNumericInputValue(inputId) {
     const element = document.getElementById(inputId);
-    const newValue = element.value.trim();
+    let newValue = element.value.trim();
+    newValue = removePrettySpaces(newValue);
     const nextValue = getValue(newValue, 
                                inputState[inputId]);
     
@@ -367,7 +392,7 @@ function tryUpdateNumericInputValue(inputId) {
     const number = Number(nextValue);
     
     if (number > 0) {
-        element.value = nextValue;
+        element.value = prettify(nextValue);
         inputState[inputId] = nextValue;
     } else {
         element.value = inputState[inputId]

@@ -9,12 +9,6 @@
     <packaging>war</packaging>
     <name>WikiGameKillerWebApp.java</name>
 
-    <!--    <parent>
-        <groupId>com.baeldung.core-java-modules</groupId>
-        <artifactId>core-java-modules</artifactId>
-        <version>0.0.1-SNAPSHOT</version>
-    </parent>-->
-
     <dependencies>
         <dependency>
             <groupId>javax.websocket</groupId>
@@ -23,12 +17,12 @@
             <scope>provided</scope>
         </dependency>
         
-            <dependency>
+        <dependency>
             <groupId>org.apache.tomcat.embed</groupId>
             <artifactId>tomcat-embed-websocket</artifactId>
             <version>9.0.30</version>
         </dependency>
-         
+        
         <dependency>
             <groupId>org.apache.tomcat.embed</groupId>
             <artifactId>tomcat-embed-core</artifactId>

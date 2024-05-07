@@ -3,7 +3,7 @@
     <head>
         <meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
         <link href="styles/styles.css" rel="stylesheet" />
-        <script src="js/script.js" defer="1"></script>
+        <script src="js/script.js" defer></script>
     </head>
     <body>
         <h1>WikiGameKiller 1.0.0</h1>
@@ -34,27 +34,27 @@
                         <td><input type="text"
                                    id="threadsInput" 
                                    class="paramInput" 
-                                   value="256"  
+                                   value="512"  
                                    oninput="tryUpdateNumericInputValue('threadsInput');"/> </td>
                     </tr>
 
                     <tr>
-                        <td><label for="expansionDurationInput">Maximum expansion duration:</label></td>
+                        <td><label for="expansionDurationInput">Maximum expansion duration (ms):</label></td>
                         <td><input type="text" 
                                    id="expansionDurationInput" 
                                    class="paramInput"
-                                   value="4000"
+                                   value="4 000"
                                    placeholder="Milliseconds"
                                    oninput="tryUpdateNumericInputValue('expansionDurationInput');"/> </td>
                     </tr>
 
                     <tr>
-                        <td><label for="waitTimeoutInput">Maximum mutex timeout:</label></td>
+                        <td><label for="waitTimeoutInput">Maximum mutex timeout (ns):</label></td>
                         <td><input type="text"
                                    id="waitTimeoutInput"
                                    class="paramInput"
-                                   value="1"
-                                   placeholder="Milliseconds"
+                                   value="1 000"
+                                   placeholder="Nanoseconds"
                                    oninput="tryUpdateNumericInputValue('waitTimeoutInput');"/> </td>
                     </tr>
 
@@ -63,27 +63,27 @@
                         <td><input type="text"
                                    id="trialsInput"
                                    class="paramInput"
-                                   value="2000" 
+                                   value="2 000" 
                                    oninput="tryUpdateNumericInputValue('trialsInput');"/> </td>
                     </tr>
 
                     <tr>
-                        <td><label for="masterSleepInput">Master sleep duration:</label></td>
+                        <td><label for="masterSleepInput">Master sleep duration (ns):</label></td>
                         <td><input type="text"
                                    id="masterSleepInput"
                                    class="paramInput"
-                                   value="1"
-                                   placeholder="Milliseconds"
+                                   value="1 000 000"
+                                   placeholder="Nanoseconds"
                                    oninput="tryUpdateNumericInputValue('masterSleepInput');"/> </td>
                     </tr>
 
                     <tr>
-                        <td><label for="slaveSleepInput">Slave sleep duration:</label></td>
+                        <td><label for="slaveSleepInput">Slave sleep duration (ns):</label></td>
                         <td><input type="text"
                                    id="slaveSleepInput" 
                                    class="paramInput"
-                                   value="1"
-                                   placeholder="Milliseconds"
+                                   value="50 000"
+                                   placeholder="Nanoseconds"
                                    oninput="tryUpdateNumericInputValue('slaveSleepInput');" /> </td>
                     </tr>
                 </table>

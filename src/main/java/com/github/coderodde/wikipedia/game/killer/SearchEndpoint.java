@@ -19,7 +19,6 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import java.util.regex.Pattern;
-import javax.enterprise.context.ApplicationScoped;
 import javax.websocket.EncodeException;
 import javax.websocket.OnClose;
 import javax.websocket.OnError;
@@ -348,10 +347,10 @@ public class SearchEndpoint {
                     <String>begin()
                     .withNumberOfRequestedThreads        (searchParameters.numberOfThreads)
                     .withExpansionDurationMillis         (searchParameters.expansionDuration)
-                    .withLockWaitMillis                  (searchParameters.waitTimeout)
+                    .withLockWaitNanos                   (searchParameters.waitTimeout)
                     .withNumberOfMasterTrials            (searchParameters.masterTrials)
-                    .withMasterThreadSleepDurationMillis (searchParameters.masterSleepDuration)
-                    .withSlaveThreadSleepDurationMillis  (searchParameters.slaveSleepDuration)
+                    .withMasterThreadSleepDurationNanos  (searchParameters.masterSleepDuration)
+                    .withSlaveThreadSleepDurationNanos   (searchParameters.slaveSleepDuration)
                     .end();
             
             isCorrect = true;
@@ -365,12 +364,12 @@ public class SearchEndpoint {
                 return;
             }
             
-            System.out.println(finder.getExpansionJoinDurationMillis());
-            System.out.println(finder.getLockWaitDurationMillis());
-            System.out.println(finder.getMasterThreadSleepDurationMillis());
+            System.out.println(finder.getExpansionJoinDurationNanos());
+            System.out.println(finder.getLockWaitDurationNanos());
+            System.out.println(finder.getMasterThreadSleepDurationNanos());
             System.out.println(finder.getMasterThreadTrials());
             System.out.println(finder.getNumberOfThreads());
-            System.out.println(finder.getSlaveThreadSleepDurationMillis());
+            System.out.println(finder.getSlaveThreadSleepDurationNanos());
             
             final List<String> path = 
                     ThreadPoolBidirectionalBFSPathFinderSearchBuilder
