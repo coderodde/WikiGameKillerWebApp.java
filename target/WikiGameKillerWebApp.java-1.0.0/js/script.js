@@ -33,12 +33,12 @@ function constructWebSocketUrl(endpoint) {
 }
 
 const inputState = {
-     "threadsInput":            "256" ,
-     "expansionDurationInput":  "4000",
-     "waitTimeoutInput":        "1"   ,
-     "trialsInput":             "2000",
-     "masterSleepInput":        "1"   ,
-     "slaveSleepInput":         "1"   
+     "threadsInput":            "256"    ,
+     "expansionDurationInput":  "4000"   ,
+     "waitTimeoutInput":        "1000000",
+     "trialsInput":             "2000"   ,
+     "masterSleepInput":        "1000000",
+     "slaveSleepInput":         "1000000"   
 };
 
 function clearLog() {

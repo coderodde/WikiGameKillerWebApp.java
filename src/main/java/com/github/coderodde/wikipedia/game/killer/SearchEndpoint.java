@@ -19,7 +19,6 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import java.util.regex.Pattern;
-import javax.enterprise.context.ApplicationScoped;
 import javax.websocket.EncodeException;
 import javax.websocket.OnClose;
 import javax.websocket.OnError;
@@ -28,7 +27,9 @@ import javax.websocket.OnOpen;
 import javax.websocket.Session;
 import javax.websocket.server.ServerEndpoint;
 
-@ServerEndpoint(value = "/search", decoders = MessageDecoder.class, encoders = MessageEncoder.class )
+@ServerEndpoint(value = "/search", 
+                decoders = MessageDecoder.class, 
+                encoders = MessageEncoder.class )
 public class SearchEndpoint {
     
     /**
@@ -347,11 +348,11 @@ public class SearchEndpoint {
                 ThreadPoolBidirectionalBFSPathFinderBuilder.
                     <String>begin()
                     .withNumberOfRequestedThreads        (searchParameters.numberOfThreads)
-                    .withExpansionDurationMillis         (searchParameters.expansionDuration)
-                    .withLockWaitMillis                  (searchParameters.waitTimeout)
+                    .withExpansionDurationNanos          (searchParameters.expansionDuration)
+                    .withLockWaitNanos                   (searchParameters.waitTimeout)
                     .withNumberOfMasterTrials            (searchParameters.masterTrials)
-                    .withMasterThreadSleepDurationMillis (searchParameters.masterSleepDuration)
-                    .withSlaveThreadSleepDurationMillis  (searchParameters.slaveSleepDuration)
+                    .withMasterThreadSleepDurationNanos  (searchParameters.masterSleepDuration)
+                    .withSlaveThreadSleepDurationNanos   (searchParameters.slaveSleepDuration)
                     .end();
             
             isCorrect = true;

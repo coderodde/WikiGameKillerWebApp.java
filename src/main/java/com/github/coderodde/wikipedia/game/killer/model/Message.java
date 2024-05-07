@@ -25,9 +25,9 @@ public final class Message {
         public String targetUrl;
         public int numberOfThreads;
         public int expansionDuration;
-        public int waitTimeout;
+        public long waitTimeout;
         public int masterTrials;
-        public int masterSleepDuration;
-        public int slaveSleepDuration;
+        public long masterSleepDuration;
+        public long slaveSleepDuration;
     }
 }
