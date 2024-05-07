@@ -365,12 +365,12 @@ public class SearchEndpoint {
                 return;
             }
             
-            System.out.println(finder.getExpansionJoinDurationMillis());
-            System.out.println(finder.getLockWaitDurationMillis());
-            System.out.println(finder.getMasterThreadSleepDurationMillis());
+            System.out.println(finder.getExpansionJoinDurationNanos());
+            System.out.println(finder.getLockWaitDurationNanos());
+            System.out.println(finder.getMasterThreadSleepDurationNanos());
             System.out.println(finder.getMasterThreadTrials());
             System.out.println(finder.getNumberOfThreads());
-            System.out.println(finder.getSlaveThreadSleepDurationMillis());
+            System.out.println(finder.getSlaveThreadSleepDurationNanos());
             
             final List<String> path = 
                     ThreadPoolBidirectionalBFSPathFinderSearchBuilder
