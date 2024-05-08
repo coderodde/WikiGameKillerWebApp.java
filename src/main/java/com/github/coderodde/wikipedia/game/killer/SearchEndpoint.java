@@ -348,7 +348,7 @@ public class SearchEndpoint {
                 ThreadPoolBidirectionalBFSPathFinderBuilder.
                     <String>begin()
                     .withNumberOfRequestedThreads        (searchParameters.numberOfThreads)
-                    .withExpansionDurationNanos          (searchParameters.expansionDuration)
+                    .withExpansionDurationMillis         (searchParameters.expansionDuration)
                     .withLockWaitNanos                   (searchParameters.waitTimeout)
                     .withNumberOfMasterTrials            (searchParameters.masterTrials)
                     .withMasterThreadSleepDurationNanos  (searchParameters.masterSleepDuration)
