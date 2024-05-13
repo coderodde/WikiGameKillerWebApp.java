@@ -276,9 +276,9 @@ function searchOnMessageCallback(event) {
         logError(`[STATISTICS] Number of expanded nodes: ${obj["numberOfExpandedNodes"]}.`)
     }
 
-    setSearchReadyButtons();
     searchSocket.close();
     searchSocket = null;
+    setSearchReadyButtons();
 }
 
 function sendData(ws, json) {
