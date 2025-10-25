@@ -1,4 +1,4 @@
-package com.github.coderodde.wikipedia.game.killer;
+package io.github.coderodde.wikipedia.game.killer;
 
 import java.util.Arrays;
 import java.util.Locale;

@@ -1,4 +1,4 @@
-package com.github.coderodde.wikipedia.game.killer.model;
+package io.github.coderodde.wikipedia.game.killer.model;
 
 import java.util.ArrayList;
 import java.util.List;

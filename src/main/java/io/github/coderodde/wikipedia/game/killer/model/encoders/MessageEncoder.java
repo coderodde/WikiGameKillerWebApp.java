@@ -1,6 +1,6 @@
-package com.github.coderodde.wikipedia.game.killer.model.encoders;
+package io.github.coderodde.wikipedia.game.killer.model.encoders;
 
-import com.github.coderodde.wikipedia.game.killer.model.Message;
+import io.github.coderodde.wikipedia.game.killer.model.Message;
 import com.google.gson.Gson;
 import javax.websocket.EncodeException;
 import javax.websocket.Encoder;

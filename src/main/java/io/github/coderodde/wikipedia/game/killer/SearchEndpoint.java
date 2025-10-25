@@ -1,14 +1,14 @@
-package com.github.coderodde.wikipedia.game.killer;
+package io.github.coderodde.wikipedia.game.killer;
 
-import com.github.coderodde.wikipedia.game.killer.model.decoders.MessageDecoder;
-import com.github.coderodde.wikipedia.game.killer.model.encoders.MessageEncoder;
-import com.github.coderodde.wikipedia.game.killer.model.Message;
+import io.github.coderodde.wikipedia.game.killer.model.decoders.MessageDecoder;
+import io.github.coderodde.wikipedia.game.killer.model.encoders.MessageEncoder;
+import io.github.coderodde.wikipedia.game.killer.model.Message;
 import com.github.coderodde.graph.pathfinding.delayed.AbstractNodeExpander;
 import com.github.coderodde.graph.pathfinding.delayed.impl.ThreadPoolBidirectionalBFSPathFinder;
 import com.github.coderodde.graph.pathfinding.delayed.impl.ThreadPoolBidirectionalBFSPathFinderBuilder;
 import com.github.coderodde.graph.pathfinding.delayed.impl.ThreadPoolBidirectionalBFSPathFinderSearchBuilder;
-import com.github.coderodde.wikipedia.graph.expansion.BackwardWikipediaGraphNodeExpander;
-import com.github.coderodde.wikipedia.graph.expansion.ForwardWikipediaGraphNodeExpander;
+import io.github.coderodde.wikipedia.graph.expansion.BackwardWikipediaGraphNodeExpander;
+import io.github.coderodde.wikipedia.graph.expansion.ForwardWikipediaGraphNodeExpander;
 import com.google.gson.Gson;
 import java.io.IOException;
 import java.util.ArrayList;
@@ -448,10 +448,20 @@ public class SearchEndpoint {
     private static final class ForwardLinkExpander 
             extends AbstractNodeExpander<String> {
 
-        private final ForwardWikipediaGraphNodeExpander expander;
+        private ForwardWikipediaGraphNodeExpander expander;
         
         public ForwardLinkExpander(final String languageCode) {
-            this.expander = new ForwardWikipediaGraphNodeExpander(languageCode);
+            try {
+                this.expander = 
+                        new ForwardWikipediaGraphNodeExpander(languageCode);
+                
+            } catch (final Exception ex) {
+                this.expander = null;
+                
+                LOGGER.log(Level.SEVERE, 
+                           "Forward link expander threw: {0}", 
+                           ex.getMessage());
+            }
         }
         
         /**
@@ -463,10 +473,14 @@ public class SearchEndpoint {
          */
         @Override
         public List<String> generateSuccessors(final String article) {
+            if (expander == null) {
+                return List.of();
+            }
+            
             try {
                 return extractArticleListTitles(expander.getNeighbors(article));
             } catch (Exception ex) {
-                return Collections.<String>emptyList();
+                return List.of();
             }
         }
 
@@ -489,11 +503,20 @@ public class SearchEndpoint {
     private static final class BackwardLinkExpander 
             extends AbstractNodeExpander<String> {
 
-        private final BackwardWikipediaGraphNodeExpander expander;
+        private BackwardWikipediaGraphNodeExpander expander;
         
         public BackwardLinkExpander(final String languageCode) {
-            this.expander = 
-                    new BackwardWikipediaGraphNodeExpander(languageCode);
+            try {
+                this.expander = 
+                        new BackwardWikipediaGraphNodeExpander(languageCode);
+                
+            } catch (final Exception ex) {
+                this.expander = null;
+                
+                LOGGER.log(Level.SEVERE, 
+                           "Backward link expander threw: {0}", 
+                           ex.getMessage());
+            }
         }
         
         /**
