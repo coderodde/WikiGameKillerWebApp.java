@@ -347,12 +347,13 @@ public class SearchEndpoint {
             this.finder = 
                 ThreadPoolBidirectionalBFSPathFinderBuilder.
                     <String>begin()
-                    .withNumberOfRequestedThreads        (searchParameters.numberOfThreads)
-                    .withExpansionDurationMillis         (searchParameters.expansionDuration)
-                    .withLockWaitNanos                   (searchParameters.waitTimeout)
-                    .withNumberOfMasterTrials            (searchParameters.masterTrials)
-                    .withMasterThreadSleepDurationNanos  (searchParameters.masterSleepDuration)
-                    .withSlaveThreadSleepDurationNanos   (searchParameters.slaveSleepDuration)
+                    .withNumberOfForwardThreads         (searchParameters.numberOfForwardThreads)
+                    .withNumberOfBackwardThreads        (searchParameters.numberOfBackwardThreads)
+                    .withExpansionDurationMillis        (searchParameters.expansionDuration)
+                    .withLockWaitNanos                  (searchParameters.waitTimeout)
+                    .withNumberOfMasterTrials           (searchParameters.masterTrials)
+                    .withMasterThreadSleepDurationNanos (searchParameters.masterSleepDuration)
+                    .withSlaveThreadSleepDurationNanos  (searchParameters.slaveSleepDuration)
                     .end();
             
             isCorrect = true;
@@ -365,13 +366,6 @@ public class SearchEndpoint {
                 // happen:
                 return;
             }
-            
-            System.out.println(finder.getExpansionJoinDurationNanos());
-            System.out.println(finder.getLockWaitDurationNanos());
-            System.out.println(finder.getMasterThreadSleepDurationNanos());
-            System.out.println(finder.getMasterThreadTrials());
-            System.out.println(finder.getNumberOfThreads());
-            System.out.println(finder.getSlaveThreadSleepDurationNanos());
             
             final List<String> path = 
                     ThreadPoolBidirectionalBFSPathFinderSearchBuilder

@@ -23,7 +23,8 @@ public final class Message {
 
         public String sourceUrl;
         public String targetUrl;
-        public int numberOfThreads;
+        public int numberOfForwardThreads;
+        public int numberOfBackwardThreads;
         public int expansionDuration;
         public long waitTimeout;
         public int masterTrials;

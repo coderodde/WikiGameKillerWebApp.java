@@ -32,10 +32,19 @@
                     <tr>
                         <td><label for="threadsInput">Number of threads:</label></td>
                         <td><input type="text"
-                                   id="threadsInput" 
+                                   id="threadsInputForward" 
                                    class="paramInput" 
-                                   value="512"  
-                                   oninput="tryUpdateNumericInputValue('threadsInput');"/> </td>
+                                   value="256"  
+                                   oninput="tryUpdateNumericInputValue('threadsInputForward');"/> </td>
+                    </tr>
+
+                    <tr>
+                        <td><label for="threadsInput">Number of threads:</label></td>
+                        <td><input type="text"
+                                   id="threadsInputBackward" 
+                                   class="paramInput" 
+                                   value="256"  
+                                   oninput="tryUpdateNumericInputValue('threadsInputBackward');"/> </td>
                     </tr>
 
                     <tr>

@@ -4,21 +4,23 @@ let sourceUrl;
 let targetUrl;
 
 const inputMap = {
-    "threadsInput":           document.getElementById("threadsInput"),
+    "threadsInputForward":    document.getElementById("threadsInputForward")   ,
+    "threadsInputBackward":   document.getElementById("threadsInputBackward")  ,
     "expansionDurationInput": document.getElementById("expansionDurationInput"),
-    "waitTimeoutInput":       document.getElementById("waitTimeoutInput"),
-    "trialsInput":            document.getElementById("trialsInput"),
-    "masterSleepInput":       document.getElementById("masterSleepInput"),
+    "waitTimeoutInput":       document.getElementById("waitTimeoutInput")      ,
+    "trialsInput":            document.getElementById("trialsInput")           ,
+    "masterSleepInput":       document.getElementById("masterSleepInput")      ,
     "slaveSleepInput":        document.getElementById("slaveSleepInput")
 }
 
 const inputNames = {
-     "threadsInput":            "Number of threads"         ,
-     "expansionDurationInput":  "Maximum expansion duration",
-     "waitTimeoutInput":        "Maximum mutex timeout"     ,
-     "trialsInput":             "Number of master trials"   ,
-     "masterSleepInput":        "Master sleep duration"     ,
-     "slaveSleepInput":         "Slave sleep duration"   
+     "threadsInputForward":    "Number of forward threads" ,
+     "threadsInputBackward":   "Number of backward threads",
+     "expansionDurationInput": "Maximum expansion duration",
+     "waitTimeoutInput":       "Maximum mutex timeout"     ,
+     "trialsInput":            "Number of master trials"   ,
+     "masterSleepInput":       "Master sleep duration"     ,
+     "slaveSleepInput":        "Slave sleep duration"   
 };
 
 function constructWebSocketUrl(endpoint) {
@@ -33,12 +35,13 @@ function constructWebSocketUrl(endpoint) {
 }
 
 const inputState = {
-     "threadsInput":            "512"    ,
-     "expansionDurationInput":  "4000"   ,
-     "waitTimeoutInput":        "1000"   ,
-     "trialsInput":             "2000"   ,
-     "masterSleepInput":        "1000000",
-     "slaveSleepInput":         "50000"   
+     "threadsInputForward":    "256"    ,
+     "threadsInputBackward":   "256"    ,
+     "expansionDurationInput": "4000"   ,
+     "waitTimeoutInput":       "1000"   ,
+     "trialsInput":            "2000"   ,
+     "masterSleepInput":       "1000000",
+     "slaveSleepInput":        "50000"   
 };
 
 function clearLog() {
@@ -238,7 +241,8 @@ function removePrettySpaces(value) {
 }
 
 function resetParametersToDefaults() {
-    document.getElementById("threadsInput")          .value = "512";
+    document.getElementById("threadsInputForward")   .value = "256";
+    document.getElementById("threadsInputBackward")  .value = "256";
     document.getElementById("expansionDurationInput").value = "4 000";
     document.getElementById("waitTimeoutInput")      .value = "1 000";
     document.getElementById("trialsInput")           .value = "2 000";
@@ -246,7 +250,8 @@ function resetParametersToDefaults() {
     document.getElementById("slaveSleepInput")       .value = "50 000";
     
     inputState = {
-        "threadsInput":            "256"    ,
+        "threadsInputForward":     "256"    ,
+        "threadsInputBackward":    "256"    ,
         "expansionDurationInput":  "4000"   ,
         "waitTimeoutInput":        "1000000",
         "trialsInput":             "2000"   ,
@@ -356,12 +361,13 @@ function spawnSearch() {
             "sourceUrl":           document.getElementById("sourceUrlInput").value,
             "targetUrl":           document.getElementById("targetUrlInput").value,
             
-            "numberOfThreads":     Number(removePrettySpaces(document.getElementById("threadsInput"          ).value)),
-            "expansionDuration":   Number(removePrettySpaces(document.getElementById("expansionDurationInput").value)),
-            "waitTimeout":         Number(removePrettySpaces(document.getElementById("waitTimeoutInput"      ).value)),
-            "masterTrials":        Number(removePrettySpaces(document.getElementById("trialsInput"           ).value)),
-            "masterSleepDuration": Number(removePrettySpaces(document.getElementById("masterSleepInput"      ).value)),
-            "slaveSleepDuration":  Number(removePrettySpaces(document.getElementById("slaveSleepInput"       ).value)),
+            "numberOfForwardThreads":  Number(removePrettySpaces(document.getElementById("threadsInputForward"   ).value)),
+            "numberOfBackwardThreads": Number(removePrettySpaces(document.getElementById("threadsInputBackward"  ).value)),
+            "expansionDuration":       Number(removePrettySpaces(document.getElementById("expansionDurationInput").value)),
+            "waitTimeout":             Number(removePrettySpaces(document.getElementById("waitTimeoutInput"      ).value)),
+            "masterTrials":            Number(removePrettySpaces(document.getElementById("trialsInput"           ).value)),
+            "masterSleepDuration":     Number(removePrettySpaces(document.getElementById("masterSleepInput"      ).value)),
+            "slaveSleepDuration":      Number(removePrettySpaces(document.getElementById("slaveSleepInput"       ).value)),
         },
         
         "errorMessages": [],
