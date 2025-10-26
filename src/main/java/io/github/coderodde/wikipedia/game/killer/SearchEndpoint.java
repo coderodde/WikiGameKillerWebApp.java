@@ -272,14 +272,14 @@ public class SearchEndpoint {
         private String targetLanguageCode;
         private String sourceTitle;
         private String targetTitle;
-        private final ProgressLogger<String> forwardProgressLogger;
-        private final ProgressLogger<String> backwardProgressLogger;
+        private final ProgressLogger<String> forwardProgressLogger 
+                = new ProgressLogger<>();
+        
+        private final ProgressLogger<String> backwardProgressLogger
+                = new ProgressLogger<>();
         
         SearchThread(final Session session, 
                      final Message message) throws IOException {
-            
-            this.forwardProgressLogger  = new ProgressLogger<>();
-            this.backwardProgressLogger = new ProgressLogger<>(); 
             
             this.session = session;
             
@@ -450,7 +450,45 @@ public class SearchEndpoint {
                 responseMessage.languageCode = sourceLanguageCode;
                 responseMessage.duration = finder.getDuration();
                 responseMessage.numberOfExpandedNodes =
-                        finder.getNumberOfExpandedNodes();    
+                        finder.getNumberOfExpandedNodes();
+               
+                if (forwardProgressLogger != null) {
+                    if (forwardProgressLogger.getNumberOfExpansions() > 0) {
+                        
+                        responseMessage.forwardExpansionMeanDuration = 
+                                (long) forwardProgressLogger
+                                        .getMeanExpansionDuration();
+                        LOGGER.log(
+                                Level.INFO,
+                                "Forward mean expansion duration: {0}", 
+                                forwardProgressLogger
+                                        .getMeanExpansionDuration());
+                    } else {
+                        LOGGER.log(Level.INFO, "No forward expansions.");
+                    }
+                } else {
+                    LOGGER.log(Level.INFO, 
+                            "No registed forward progress logger.");
+                }
+
+                if (backwardProgressLogger != null) {
+                    if (backwardProgressLogger.getNumberOfExpansions() > 0) {
+                        
+                        responseMessage.backwardExpansionMeanDuration = 
+                                (long) backwardProgressLogger
+                                        .getMeanExpansionDuration();
+                        LOGGER.log(
+                                Level.INFO,
+                                "Backward mean expansion duration: {0}", 
+                                backwardProgressLogger
+                                        .getMeanExpansionDuration());
+                    } else {
+                        LOGGER.log(Level.INFO, "No backward expansions.");
+                    }
+                } else {
+                    LOGGER.log(Level.INFO, 
+                            "No registed backward progress logger.");
+                }
             }
             
             try {
