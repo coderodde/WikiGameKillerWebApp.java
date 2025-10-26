@@ -18,6 +18,8 @@ public final class Message {
     public String languageCode;
     public List<String> errorMessages = new ArrayList<>();
     public List<String> infoMessages  = new ArrayList<>();
+    public long forwardExpansionMeanDuration;
+    public long backwardExpansionMeanDuration;
 
     public static final class SearchParameters {
 

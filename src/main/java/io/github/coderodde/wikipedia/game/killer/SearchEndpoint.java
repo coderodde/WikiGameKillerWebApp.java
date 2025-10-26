@@ -10,6 +10,7 @@ import io.github.coderodde.graph.pathfinding.delayed.impl.ThreadPoolBidirectiona
 import io.github.coderodde.wikipedia.graph.expansion.BackwardWikipediaGraphNodeExpander;
 import io.github.coderodde.wikipedia.graph.expansion.ForwardWikipediaGraphNodeExpander;
 import com.google.gson.Gson;
+import io.github.coderodde.graph.pathfinding.delayed.ProgressLogger;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Collections;
@@ -31,6 +32,8 @@ import javax.websocket.server.ServerEndpoint;
                 decoders = MessageDecoder.class, 
                 encoders = MessageEncoder.class )
 public class SearchEndpoint {
+    
+    private static final long NO_MEAN_DURATION_VALUE = -1L;
     
     /**
      * The Wikipedia URL format.
@@ -104,6 +107,30 @@ public class SearchEndpoint {
                             searchThread
                                     .finder
                                     .getNumberOfExpandedNodes();
+                    
+                    ProgressLogger forwardProgressLogger = 
+                            searchThread.finder.getForwardProgressLogger();
+                    
+                    if (forwardProgressLogger != null) {
+                        message.forwardExpansionMeanDuration = 
+                                (long) forwardProgressLogger
+                                        .getMeanExpansionDuration();
+                    } else {
+                        message.forwardExpansionMeanDuration = 
+                                NO_MEAN_DURATION_VALUE;
+                    }
+                    
+                    ProgressLogger backwardProgressLogger = 
+                            searchThread.finder.getBackwardProgressLogger();
+                    
+                    if (backwardProgressLogger != null) {
+                        message.backwardExpansionMeanDuration = 
+                                (long) backwardProgressLogger
+                                        .getMeanExpansionDuration();
+                    } else {
+                        message.backwardExpansionMeanDuration = 
+                                NO_MEAN_DURATION_VALUE;
+                    }
                     
                     message.searchParameters = new Message.SearchParameters();
                     message.searchParameters.sourceUrl =
@@ -245,9 +272,14 @@ public class SearchEndpoint {
         private String targetLanguageCode;
         private String sourceTitle;
         private String targetTitle;
+        private final ProgressLogger<String> forwardProgressLogger;
+        private final ProgressLogger<String> backwardProgressLogger;
         
         SearchThread(final Session session, 
                      final Message message) throws IOException {
+            
+            this.forwardProgressLogger  = new ProgressLogger<>();
+            this.backwardProgressLogger = new ProgressLogger<>(); 
             
             this.session = session;
             
@@ -359,6 +391,14 @@ public class SearchEndpoint {
             isCorrect = true;
         }
         
+        ProgressLogger getForwardProgressLogger() {
+            return forwardProgressLogger;
+        }
+        
+        ProgressLogger getBackwardProgressLogger() {
+            return backwardProgressLogger;
+        }
+        
         @Override
         public void run() {
             if (finder == null  ) {
@@ -374,6 +414,9 @@ public class SearchEndpoint {
                     .withTargetNode(targetTitle)
                     .withForwardNodeExpander(forwardNodeExpander)
                     .withBackwardNodeExpander(backwardNodeExpander)
+                    .withForwardSearchProgressLogger(forwardProgressLogger)
+                    .withBackwardSearchProgressLogger(backwardProgressLogger)
+                    .withSharedSearchProgressLogger(null)
                     .search();
             
             LOGGER.log(

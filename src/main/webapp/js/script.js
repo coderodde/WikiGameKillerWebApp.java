@@ -273,7 +273,19 @@ function searchOnMessageCallback(event) {
         
     } else if (obj["status"] === "solutionFound") {
         logInfo(`[STATISTICS] Duration: ${obj["duration"]} milliseconds.`);
-        logInfo(`[STATISTICS] Number of expanded nodes: ${obj["numberOfExpandedNodes"]}.`)
+        logInfo(`[STATISTICS] Number of expanded nodes: ${obj["numberOfExpandedNodes"]}.`);
+        
+        const meanForward  = parseInt(obj["forwardExpansionMeanDuration"],  10);
+        const meanBackward = parseInt(obj["backwardExpansionMeanDuration"], 10);
+        
+        if (meanForward !== -1) {
+            logInfo(`[STATISTICS] Average forward expansion in ${meanForward} milliseconds.`);
+        }
+        
+        if (meanBackward !== -1) {
+            logInfo(`[STATISTICS] Average backward expansion in ${meanBackward} milliseconds.`);
+        }
+        
         logLinkPath(obj["urlPath"], obj["languageCode"]);
     } else if (obj["status"] === "halted") {
         logError("[STATISTICS] Search halted.");
